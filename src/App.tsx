@@ -1,0 +1,105 @@
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { MultiTenantProvider } from "@/contexts/MultiTenantContext";
+import { PermissionsProvider } from "@/contexts/PermissionsContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import Landing from "./pages/Landing";
+import LoginPage from "./pages/Login";
+import Index from "./pages/Index";
+import Layout from "./components/Layout";
+import AdminDashboard from "./pages/dashboards/AdminDashboard";
+import TerapeutaDashboard from "./pages/dashboards/TerapeutaDashboard";
+import RecepcaoDashboard from "./pages/dashboards/RecepcaoDashboard";
+import ResponsavelDashboard from "./pages/dashboards/ResponsavelDashboard";
+import Agenda from "./pages/Agenda";
+import Usuarios from "./pages/usuarios/Usuarios";
+import Pacientes from "./pages/pacientes/Pacientes";
+import PatientProfile from "./pages/pacientes/PatientProfile";
+import Prontuarios from "./pages/prontuarios/Prontuarios";
+import Relatorios from "./pages/relatorios/Relatorios";
+import Settings from "./pages/Settings";
+import Evolucoes from "./pages/evolucoes/Evolucoes";
+import ABAProtocols from "./pages/protocolos/ABAProtocols";
+import RealtimeDataCollection from "./pages/coleta/RealtimeDataCollection";
+import NotFound from "./pages/NotFound";
+
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <AuthProvider>
+        <MultiTenantProvider>
+          <PermissionsProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/landing" element={<Landing />} />
+                <Route 
+                  path="/login" 
+                  element={
+                    <ProtectedRoute requireAuth={false}>
+                      <LoginPage />
+                    </ProtectedRoute>
+                  } 
+                />
+                <Route 
+                  path="/login/:type" 
+                  element={
+                    <ProtectedRoute requireAuth={false}>
+                      <LoginPage />
+                    </ProtectedRoute>
+                  } 
+                />
+                {/* Redirecionar root para landing se não autenticado */}
+                <Route 
+                  path="/" 
+                  element={
+                    <ProtectedRoute requireAuth={false}>
+                      <Landing />
+                    </ProtectedRoute>
+                  } 
+                />
+                {/* Protected Routes with Layout */}
+                <Route 
+                  path="/app" 
+                  element={
+                    <ProtectedRoute>
+                      <Layout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<Index />} />
+                  <Route path="dashboard/admin" element={<AdminDashboard />} />
+                  <Route path="dashboard/terapeuta" element={<TerapeutaDashboard />} />
+                  <Route path="dashboard/recepcao" element={<RecepcaoDashboard />} />
+                  <Route path="dashboard/responsavel" element={<ResponsavelDashboard />} />
+                  <Route path="agenda" element={<Agenda />} />
+                  <Route path="usuarios" element={<Usuarios />} />
+                  <Route path="pacientes" element={<Pacientes />} />
+                  <Route path="pacientes/:id" element={<PatientProfile />} />
+                  <Route path="prontuarios" element={<Prontuarios />} />
+                  <Route path="evolucoes" element={<Evolucoes />} />
+                  <Route path="protocolos" element={<ABAProtocols />} />
+                  <Route path="coleta-dados" element={<RealtimeDataCollection />} />
+                  <Route path="relatorios" element={<Relatorios />} />
+                  <Route path="configuracoes" element={<Settings />} />
+                </Route>
+                
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </PermissionsProvider>
+        </MultiTenantProvider>
+      </AuthProvider>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;
