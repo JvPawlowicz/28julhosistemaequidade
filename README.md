@@ -120,3 +120,4 @@ VITE_SUPABASE_ANON_KEY= # Chave anon do Supabase
 Pronto para produção!
 # sistemaequidadev1
 # sistemaequidadev1
+# equidademaisv1
