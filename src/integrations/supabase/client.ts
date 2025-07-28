@@ -7,6 +7,17 @@ const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY; // Use apenas a anon key no frontend!
 
 // Segurança: nunca exponha a service key no frontend!
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  // Log para diagnóstico em produção
+  alert('DEBUG: Variáveis do Supabase: ' + JSON.stringify({ SUPABASE_URL, SUPABASE_ANON_KEY }));
+  console.error('DEBUG: Variáveis do Supabase', { SUPABASE_URL, SUPABASE_ANON_KEY });
+  throw new Error(
+    `Variáveis de ambiente do Supabase não definidas!\nVITE_SUPABASE_URL: ${SUPABASE_URL}\nVITE_SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}`
+  );
+} else {
+  console.log('DEBUG: Variáveis do Supabase (OK)', { SUPABASE_URL, SUPABASE_ANON_KEY });
+}
+
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     storage: localStorage,

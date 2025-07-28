@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { usePermissions } from "@/contexts/PermissionsContext";
+import { usePermissions } from "@/contexts/usePermissions";
 import { 
   Clock, 
   Users, 
@@ -22,14 +22,26 @@ import {
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+interface PreferredTimeSlots {
+  monday?: string[];
+  tuesday?: string[];
+  wednesday?: string[];
+  thursday?: string[];
+  friday?: string[];
+  saturday?: string[];
+  sunday?: string[];
+}
+
+type WaitingListStatus = "waiting" | "contacted" | "scheduled" | "cancelled";
+
 interface WaitingListItem {
   id: string;
   patient_id: string;
   specialty: string;
   priority_level: number;
-  preferred_time_slots: any;
+  preferred_time_slots: PreferredTimeSlots;
   notes: string;
-  status: 'waiting' | 'contacted' | 'scheduled' | 'cancelled';
+  status: WaitingListStatus;
   added_date: string;
   last_contact_date: string | null;
   estimated_wait_weeks: number | null;
@@ -48,7 +60,7 @@ const WaitingListModal = () => {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [filterSpecialty, setFilterSpecialty] = useState<string>('all');
 
-  const fetchWaitingList = async () => {
+  const fetchWaitingList = useCallback(async () => {
     setLoading(true);
     try {
       // Mock waiting list data - will be replaced when types are updated
@@ -94,7 +106,7 @@ const WaitingListModal = () => {
       });
     }
     setLoading(false);
-  };
+  }, [toast]);
 
   const updateStatus = async (id: string, status: string) => {
     try {
@@ -102,7 +114,7 @@ const WaitingListModal = () => {
       setWaitingList(prev => 
         prev.map(item => 
           item.id === id 
-            ? { ...item, status: status as any, last_contact_date: status === 'contacted' ? new Date().toISOString() : item.last_contact_date }
+            ? { ...item, status: status as WaitingListStatus, last_contact_date: status === 'contacted' ? new Date().toISOString() : item.last_contact_date }
             : item
         )
       );
@@ -117,10 +129,8 @@ const WaitingListModal = () => {
   };
 
   useEffect(() => {
-    if (isOpen) {
-      fetchWaitingList();
-    }
-  }, [isOpen]);
+    fetchWaitingList();
+  }, [fetchWaitingList]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -154,6 +164,23 @@ const WaitingListModal = () => {
     waiting: waitingList.filter(item => item.status === 'waiting').length,
     contacted: waitingList.filter(item => item.status === 'contacted').length,
     highPriority: waitingList.filter(item => item.priority_level >= 4).length,
+  };
+
+  const handleStatusChange = (item: WaitingListItem, status: WaitingListStatus) => {
+    const updatedItem: WaitingListItem = {
+      ...item,
+      status,
+      last_contact_date: status === 'contacted' ? new Date().toISOString() : item.last_contact_date,
+      preferred_time_slots: item.preferred_time_slots,
+    };
+
+    setWaitingList(prev => 
+      prev.map(i => i.id === item.id ? updatedItem : i)
+    );
+  };
+
+  const handleSomeAction = (param: WaitingListItem) => {
+    // ...função existente...
   };
 
   if (!hasPermission('agenda', 'read')) {
@@ -279,7 +306,7 @@ const WaitingListModal = () => {
                         {item.patient.phone && (
                           <>
                             <span className="mx-2">•</span>
-                            <span className="flex items-center gap-1 inline-flex">
+                            <span className="inline-flex items-center gap-1">
                               <Phone className="h-3 w-3" />
                               {item.patient.phone}
                             </span>

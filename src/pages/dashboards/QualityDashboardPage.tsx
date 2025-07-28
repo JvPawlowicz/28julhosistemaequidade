@@ -2,7 +2,7 @@ import { QualityDashboard } from "@/components/QualityDashboard";
 import { BackupManager } from "@/components/BackupManager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { usePermissions } from "@/contexts/PermissionsContext";
+import { usePermissions } from "@/contexts/usePermissions";
 import { 
   BarChart3, 
   Shield, 

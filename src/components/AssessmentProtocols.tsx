@@ -20,7 +20,7 @@ import {
   CheckCircle
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { usePermissions } from "@/contexts/PermissionsContext";
+import { usePermissions } from "@/contexts/usePermissions";
 import { ScaleCalculator } from "./ScaleCalculator";
 
 interface AssessmentProtocolsProps {

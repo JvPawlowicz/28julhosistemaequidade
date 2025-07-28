@@ -1,5 +1,6 @@
+import * as React from 'react';
 import { createContext, useContext, ReactNode } from "react";
-import { useMultiTenant } from "./MultiTenantContext";
+import { useMultiTenant } from "./useMultiTenant";
 
 export interface Permission {
   resource: string;
@@ -233,10 +234,4 @@ export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {
   );
 };
 
-export const usePermissions = () => {
-  const context = useContext(PermissionsContext);
-  if (!context) {
-    throw new Error('usePermissions must be used within a PermissionsProvider');
-  }
-  return context;
-};
+export { PermissionsContext };

@@ -1,12 +1,20 @@
-import { usePermissions } from "@/contexts/PermissionsContext";
+import { usePermissions } from "@/contexts/usePermissions";
 import AdminDashboard from "./dashboards/AdminDashboard";
 import TerapeutaDashboard from "./dashboards/TerapeutaDashboard";
 import RecepcaoDashboard from "./dashboards/RecepcaoDashboard";
 import ResponsavelDashboard from "./dashboards/ResponsavelDashboard";
 
 const Index = () => {
+  // Hook deve ser chamado fora do try/catch
   const { getUserRole } = usePermissions();
-  const userRole = getUserRole();
+  let userRole = '';
+  try {
+    userRole = getUserRole();
+    console.log('DEBUG Index: userRole', userRole);
+  } catch (e) {
+    console.error('ERRO Index:', e);
+    return <div>Erro crítico ao renderizar página inicial. Veja o console.</div>;
+  }
 
   // Redirect para o dashboard apropriado baseado no role do usuário
   switch (userRole) {

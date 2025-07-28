@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import * as React from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -23,7 +23,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -65,10 +64,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
       if (data.user) {
         toast.success('Login realizado com sucesso!');
-        // SPA: use navegação do React Router
-        setTimeout(() => {
-          navigate('/');
-        }, 1000);
       }
 
       return { error: null };
@@ -125,8 +120,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         toast.error('Erro ao fazer logout');
       } else {
         toast.success('Logout realizado com sucesso!');
-        // SPA: use navegação do React Router
-        navigate('/login');
       }
     } catch (error) {
       console.error('Unexpected logout error:', error);

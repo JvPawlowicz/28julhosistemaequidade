@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { MapPin } from "lucide-react";
-import { useMultiTenant } from "@/contexts/MultiTenantContext";
+import { useMultiTenant } from "@/contexts/useMultiTenant";
 
 interface UnitDataIndicatorProps {
   className?: string;

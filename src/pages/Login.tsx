@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import * as React from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useAuth } from "@/contexts/useAuth";
+import { useAuth, useAuthActions } from "@/contexts/useAuth";
 import { UserRound, Heart, Stethoscope, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -33,7 +34,7 @@ type ParentFormData = z.infer<typeof parentSchema>;
 const LoginPage = () => {
   const navigate = useNavigate();
   const { type } = useParams();
-  const { signIn, signUp, loading } = useAuth();
+  const { signIn, signUp, loading } = useAuthActions();
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [showPassword, setShowPassword] = useState(false);

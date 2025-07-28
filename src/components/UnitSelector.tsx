@@ -18,7 +18,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useMultiTenant } from "@/contexts/MultiTenantContext";
+import { useMultiTenant } from "@/contexts/useMultiTenant";
 
 const UnitSelector = () => {
   const { currentUnit, getUserUnits, switchUnit } = useMultiTenant();

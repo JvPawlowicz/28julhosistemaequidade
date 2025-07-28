@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MedicalRecordTabs from "@/components/MedicalRecordTabs";
-import { usePermissions } from "@/contexts/PermissionsContext";
+import { usePermissions } from "@/contexts/usePermissions";
 import { 
   ArrowLeft,
   User, 
@@ -24,20 +24,37 @@ import {
   Edit,
   Plus
 } from "lucide-react";
+import type { Evolution } from "../../types/Evolution";
+
+interface Patient {
+  id: number;
+  nome: string;
+  idade: number;
+  dataNascimento: string;
+  responsavel: string;
+  telefone: string;
+  email: string;
+  endereco: string;
+  diagnostico: string;
+  unidade: string;
+  status: string;
+  ultimaConsulta: string;
+  proximaConsulta: string;
+  terapeutas: string[];
+  faltas: number;
+  frequencia: number;
+  convenio: string;
+  observacoes: string;
+  historico: Array<{ data: string; tipo: string; profissional: string; status: string }>;
+}
 
 const PatientProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
-  const [evolutions, setEvolutions] = useState([]);
+  const [evolutions, setEvolutions] = useState<Evolution[]>([]);
 
-  useEffect(() => {
-    if (id) {
-      fetchPatientEvolutions();
-    }
-  }, [id]);
-
-  const fetchPatientEvolutions = async () => {
+  const fetchPatientEvolutions = useCallback(async () => {
     try {
       const { data } = await supabase
         .from('evolutions')
@@ -49,14 +66,22 @@ const PatientProfile = () => {
         .eq('status', 'Finalizada')
         .order('created_at', { ascending: false });
       
-      setEvolutions(data || []);
+      setEvolutions((data || []).map(ev => ({
+        ...ev,
+        content: typeof ev.content === "string" ? JSON.parse(ev.content) : ev.content,
+        supervisors_signature: String(ev.supervisors_signature)
+      })));
     } catch (error) {
       console.error('Error fetching evolutions:', error);
     }
-  };
+  }, [id]);
   
+  useEffect(() => {
+    fetchPatientEvolutions();
+  }, [id, fetchPatientEvolutions]);
+
   // Mock patient data - em produção viria do Supabase
-  const patient = {
+  const patient: Patient = {
     id: parseInt(id || "1"),
     nome: "João Silva Santos",
     idade: 12,
@@ -337,7 +362,7 @@ const PatientProfile = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {evolutions.map((evolution: any, index: number) => (
+                  {evolutions.map((evolution: Evolution, index: number) => (
                     <div key={evolution.id} className="relative">
                       <div className="flex items-start space-x-4">
                         <div className="flex-shrink-0">
@@ -383,7 +408,7 @@ const PatientProfile = () => {
         {/* Prontuário Médico */}
         <TabsContent value="prontuario">
           {canViewClinical ? (
-            <MedicalRecordTabs patient={patient} />
+            <MedicalRecordTabs />
           ) : (
             <Card>
               <CardContent className="p-8 text-center">

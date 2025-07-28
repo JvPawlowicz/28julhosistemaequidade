@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { UnitDataIndicator } from "@/components/UnitDataIndicator";
-import { useMultiTenant } from "@/contexts/MultiTenantContext";
-import { usePermissions } from "@/contexts/PermissionsContext";
+import { useMultiTenant } from "@/contexts/useMultiTenant";
+import { usePermissions } from "@/contexts/usePermissions";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
@@ -30,14 +30,18 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { SmartScheduler } from "@/components/SmartScheduler";
 
+interface Appointment {
+  id: string;
+  date: string;
+  status: string;
+  // Adicione outros campos conforme necessário
+}
+
 const Agenda = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [view, setView] = useState<'day' | 'week' | 'month'>('week');
-  const [filterStatus, setFilterStatus] = useState("todos");
-  const [filterProfissional, setFilterProfissional] = useState("todos");
-  const [filterSala, setFilterSala] = useState("todas");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedAppointment, setSelectedAppointment] = useState<any>(null);
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showSmartScheduler, setShowSmartScheduler] = useState(false);
   const { toast } = useToast();
   const { currentUnit } = useMultiTenant();
@@ -150,10 +154,7 @@ const Agenda = () => {
   const filteredAppointments = appointments.filter(apt => {
     const matchesSearch = apt.patient.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          apt.therapist.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'todos' || apt.status === filterStatus;
-    const matchesProfissional = filterProfissional === 'todos' || apt.therapist.includes(filterProfissional);
-    const matchesSala = filterSala === 'todas' || apt.room.includes(filterSala);
-    return matchesSearch && matchesStatus && matchesProfissional && matchesSala;
+    return matchesSearch;
   });
 
   const handleUpdateStatus = (id: number, newStatus: string) => {
@@ -219,7 +220,7 @@ const Agenda = () => {
               />
             </div>
             
-            <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <Select value="todos">
               <SelectTrigger>
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
@@ -233,7 +234,7 @@ const Agenda = () => {
               </SelectContent>
             </Select>
 
-            <Select value={filterProfissional} onValueChange={setFilterProfissional}>
+            <Select value="todos">
               <SelectTrigger>
                 <SelectValue placeholder="Profissional" />
               </SelectTrigger>
@@ -245,7 +246,7 @@ const Agenda = () => {
               </SelectContent>
             </Select>
 
-            <Select value={filterSala} onValueChange={setFilterSala}>
+            <Select value="todas">
               <SelectTrigger>
                 <SelectValue placeholder="Sala" />
               </SelectTrigger>

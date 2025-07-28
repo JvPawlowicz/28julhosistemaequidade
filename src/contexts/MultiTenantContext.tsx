@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 
 export interface Unit {
@@ -21,6 +22,9 @@ export interface Professional {
   specialty: string;
   units: string[]; // IDs das unidades onde pode atuar
   permissions: string[];
+  profile?: {
+    requires_supervision?: boolean;
+  };
 }
 
 interface MultiTenantContextType {
@@ -91,7 +95,13 @@ interface MultiTenantProviderProps {
 export const MultiTenantProvider = ({ children }: MultiTenantProviderProps) => {
   const [currentUnit, setCurrentUnit] = useState<Unit | null>(null);
   const [availableUnits] = useState<Unit[]>(mockUnits);
-  const [currentUser] = useState<Professional>(mockCurrentUser);
+  const [currentUser, setCurrentUser] = useState<Professional | null>(null);
+
+  const getUserUnits = React.useCallback((): Unit[] => {
+    return availableUnits.filter(unit => 
+      currentUser?.units.includes(unit.id) && unit.active
+    );
+  }, [availableUnits, currentUser]);
 
   // Inicializar com a primeira unidade disponível para o usuário
   useEffect(() => {
@@ -99,7 +109,7 @@ export const MultiTenantProvider = ({ children }: MultiTenantProviderProps) => {
     if (userUnits.length > 0 && !currentUnit) {
       setCurrentUnit(userUnits[0]);
     }
-  }, [currentUser]);
+  }, [currentUser, currentUnit, getUserUnits]);
 
   const switchUnit = (unitId: string) => {
     if (hasAccessToUnit(unitId)) {
@@ -113,13 +123,7 @@ export const MultiTenantProvider = ({ children }: MultiTenantProviderProps) => {
   };
 
   const hasAccessToUnit = (unitId: string): boolean => {
-    return currentUser.units.includes(unitId);
-  };
-
-  const getUserUnits = (): Unit[] => {
-    return availableUnits.filter(unit => 
-      currentUser.units.includes(unit.id) && unit.active
-    );
+    return currentUser?.units.includes(unitId) ?? false;
   };
 
   return (
@@ -138,10 +142,5 @@ export const MultiTenantProvider = ({ children }: MultiTenantProviderProps) => {
   );
 };
 
-export const useMultiTenant = () => {
-  const context = useContext(MultiTenantContext);
-  if (!context) {
-    throw new Error('useMultiTenant must be used within a MultiTenantProvider');
-  }
-  return context;
-};
+export { MultiTenantContext };
+export type { MultiTenantContextType };

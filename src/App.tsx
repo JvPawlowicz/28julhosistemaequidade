@@ -32,12 +32,12 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
-        <MultiTenantProvider>
-          <PermissionsProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <AuthProvider>
+          <MultiTenantProvider>
+            <PermissionsProvider>
+              <Toaster />
+              <Sonner />
               <Routes>
                 {/* Public Routes */}
                 <Route path="/landing" element={<Landing />} />
@@ -91,13 +91,12 @@ const App = () => (
                   <Route path="relatorios" element={<Relatorios />} />
                   <Route path="configuracoes" element={<Settings />} />
                 </Route>
-                
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </BrowserRouter>
-          </PermissionsProvider>
-        </MultiTenantProvider>
-      </AuthProvider>
+            </PermissionsProvider>
+          </MultiTenantProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );

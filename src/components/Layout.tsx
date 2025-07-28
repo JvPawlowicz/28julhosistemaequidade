@@ -3,8 +3,8 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import UnitSelector from "./UnitSelector";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/useAuth";
-import { usePermissions } from "@/contexts/PermissionsContext";
-import { useMultiTenant } from "@/contexts/MultiTenantContext";
+import { usePermissions } from "@/contexts/usePermissions";
+import { useMultiTenant } from "@/contexts/useMultiTenant";
 import UnitDataIndicator from "./UnitDataIndicator";
 import { NotificationCenter } from "./NotificationCenter";
 import { 

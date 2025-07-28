@@ -7,8 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import UnitDataIndicator from "@/components/UnitDataIndicator";
 import { ImportPatientModal } from "@/components/ImportPatientModal";
 import WaitingListModal from "@/components/WaitingListModal";
-import { useMultiTenant } from "@/contexts/MultiTenantContext";
-import { usePermissions } from "@/contexts/PermissionsContext";
+import { useMultiTenant } from "@/contexts/useMultiTenant";
+import { usePermissions } from "@/contexts/usePermissions";
 import { 
   Users, 
   Plus, 

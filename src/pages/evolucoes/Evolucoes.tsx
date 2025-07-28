@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -33,8 +33,8 @@ import {
   Upload,
   X
 } from "lucide-react";
-import { usePermissions } from "@/contexts/PermissionsContext";
-import { useMultiTenant } from "@/contexts/MultiTenantContext";
+import { usePermissions } from "@/contexts/usePermissions";
+import { useMultiTenant } from "@/contexts/useMultiTenant";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import EvolutionNotifications from "@/components/EvolutionNotifications";
@@ -42,34 +42,7 @@ import EvolutionAdendum from "@/components/EvolutionAdendum";
 import FileUpload from "@/components/FileUpload";
 import { EmptyState } from "@/components/EmptyState";
 import UnitDataIndicator from "@/components/UnitDataIndicator";
-
-interface Evolution {
-  id: string;
-  patient_id: string;
-  professional_id: string;
-  appointment_id: string;
-  status: 'Rascunho' | 'Pendente de Supervisão' | 'Finalizada';
-  content?: {
-    inappropriate_behavior?: boolean;
-    behavior_description?: string;
-    session_report?: string;
-    supervision_feedback?: string;
-  };
-  linked_pti_objectives?: string[];
-  attachments?: string[];
-  signed_at?: string;
-  supervisors_signature?: {
-    supervisor_id: string;
-    approved_at: string;
-  };
-  created_at: string;
-  updated_at: string;
-  // Joined data
-  patient_name?: string;
-  professional_name?: string;
-  specialty?: string;
-  requires_supervision?: boolean;
-}
+import type { Evolution } from "../../types/Evolution";
 
 interface UserRole {
   role: string;
@@ -86,6 +59,19 @@ interface Appointment {
   patient_id: string;
   appointment_date: string;
   status: string;
+}
+
+interface Professional {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  specialty: string;
+  units: string[];
+  permissions: string[];
+  profile?: {
+    requires_supervision?: boolean;
+  };
 }
 
 const Evolucoes = () => {
@@ -105,7 +91,7 @@ const Evolucoes = () => {
   // Estado dos dados
   const [evolutions, setEvolutions] = useState<Evolution[]>([]);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<Professional | null>(null);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [realizedAppointments, setRealizedAppointments] = useState<Appointment[]>([]);
   
@@ -124,11 +110,42 @@ const Evolucoes = () => {
   const [showAdendum, setShowAdendum] = useState(false);
   const [selectedEvolutionForAdendum, setSelectedEvolutionForAdendum] = useState<string | null>(null);
 
-  useEffect(() => {
-    initializeData();
-  }, []);
+  const fetchEvolutions = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-  const initializeData = async () => {
+      const query = supabase
+        .from('evolutions')
+        .select(`
+          *,
+          patients!evolutions_patient_id_fkey(full_name),
+          profiles!evolutions_professional_id_fkey(full_name, requires_supervision)
+        `);
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const formattedData = (data || []).map(evolution => ({
+        ...evolution,
+        content: evolution.content as Evolution['content'],
+        supervisors_signature: evolution.supervisors_signature as Evolution['supervisors_signature'],
+        requires_supervision: evolution.profiles?.requires_supervision || false,
+      })) as Evolution[];
+
+      setEvolutions(formattedData);
+    } catch (error) {
+      console.error('Error fetching evolutions:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar evoluções",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
+
+  const initializeData = useCallback(async () => {
     try {
       setLoading(true);
       await Promise.all([
@@ -148,7 +165,11 @@ const Evolucoes = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchEvolutions, toast]);
+
+  useEffect(() => {
+    initializeData();
+  }, [initializeData]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -161,7 +182,17 @@ const Evolucoes = () => {
         .eq('user_id', user.id)
         .single();
         
-      setCurrentUser({ ...user, profile });
+      // Ao usar setCurrentUser, garanta todos os campos obrigatórios:
+      setCurrentUser({
+        id: user.id,
+        name: user.user_metadata?.name || user.user_metadata?.full_name || "",
+        email: user.email,
+        role: user.role,
+        specialty: user.user_metadata?.specialty || "",
+        units: user.user_metadata?.units || [],
+        permissions: user.user_metadata?.permissions || [],
+        profile: profile,
+      });
     } catch (error) {
       console.error('Error fetching current user:', error);
     }
@@ -181,43 +212,6 @@ const Evolucoes = () => {
       setUserRoles(data || []);
     } catch (error) {
       console.error('Error fetching user roles:', error);
-    }
-  };
-
-  const fetchEvolutions = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      let query = supabase
-        .from('evolutions')
-        .select(`
-          *,
-          patients!evolutions_patient_id_fkey(full_name),
-          profiles!evolutions_professional_id_fkey(full_name, requires_supervision)
-        `);
-
-      const { data, error } = await query.order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const formattedData = (data || []).map(evolution => ({
-        ...evolution,
-        content: evolution.content as Evolution['content'],
-        supervisors_signature: evolution.supervisors_signature as Evolution['supervisors_signature'],
-        patient_name: evolution.patients?.full_name || 'N/A',
-        professional_name: evolution.profiles?.full_name || 'N/A',
-        requires_supervision: evolution.profiles?.requires_supervision || false,
-      })) as Evolution[];
-
-      setEvolutions(formattedData);
-    } catch (error) {
-      console.error('Error fetching evolutions:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar evoluções",
-        variant: "destructive"
-      });
     }
   };
 
@@ -401,15 +395,14 @@ const Evolucoes = () => {
   };
 
   const filteredEvolutions = evolutions.filter(ev => {
-    const matchesSearch = ev.patient_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         ev.professional_name?.toLowerCase().includes(searchTerm.toLowerCase());
+    // Buscar nome do paciente e profissional usando helpers
+    const patientName = getPatientName(ev.patient_id).toLowerCase();
+    const professionalName = getProfessionalName(ev.professional_id).toLowerCase();
+    const matchesSearch = patientName.includes(searchTerm.toLowerCase()) || professionalName.includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'todas' || ev.status.toLowerCase().replace(' ', '') === filterStatus.replace('_', '');
-    
-    // Filtrar por permissões
     if (userRole === 'terapeuta' || userRole === 'estagiario') {
       return matchesSearch && matchesStatus && ev.professional_id === currentUser?.id;
     }
-    
     return matchesSearch && matchesStatus;
   });
 
@@ -441,6 +434,20 @@ const Evolucoes = () => {
         </Card>
       </div>
     );
+  }
+
+  // Helper para buscar nome do paciente
+  function getPatientName(patient_id: string) {
+    // Buscar no array de pacientes se disponível, ou retornar o id
+    const patient = patients.find(p => p.id === patient_id);
+    return patient ? patient.full_name : patient_id;
+  }
+
+  // Helper para buscar nome do profissional
+  function getProfessionalName(professional_id: string) {
+    // Buscar no array de profissionais se disponível, ou retornar o id
+    const prof = userRoles.find(u => u.role === professional_id);
+    return prof ? prof.role : professional_id;
   }
 
   return (
@@ -521,9 +528,9 @@ const Evolucoes = () => {
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <Checkbox 
+                  <Checkbox
                     checked={formData.inappropriate_behavior}
-                    onCheckedChange={(checked) => 
+                    onCheckedChange={(checked) =>
                       setFormData(prev => ({ ...prev, inappropriate_behavior: !!checked }))
                     }
                   />
@@ -652,11 +659,11 @@ const Evolucoes = () => {
               <SelectContent>
                 <SelectItem value="todos">Todos</SelectItem>
                 {evolutions
-                  .map(e => e.professional_name)
-                  .filter((name, index, arr) => arr.indexOf(name) === index)
-                  .map(name => (
-                    <SelectItem key={name} value={name || ''}>
-                      {name}
+                  .map(e => e.professional_id)
+                  .filter((id, index, arr) => arr.indexOf(id) === index)
+                  .map(id => (
+                    <SelectItem key={id} value={id}>
+                      {getProfessionalName(id)}
                     </SelectItem>
                   ))}
               </SelectContent>
@@ -697,9 +704,9 @@ const Evolucoes = () => {
                     <div className="flex items-center gap-4">
                       <FileText className="h-5 w-5 text-primary" />
                       <div>
-                        <h3 className="font-semibold text-lg">{evolution.patient_name}</h3>
+                        <h3 className="font-semibold text-lg">{getPatientName(evolution.patient_id)}</h3>
                         <p className="text-sm text-muted-foreground">
-                          {evolution.professional_name} • {new Date(evolution.created_at).toLocaleDateString('pt-BR')}
+                          Profissional: {getProfessionalName(evolution.professional_id)}
                         </p>
                       </div>
                     </div>
@@ -830,9 +837,9 @@ const Evolucoes = () => {
                     <CardContent className="p-6">
                       <div className="flex items-center justify-between mb-4">
                         <div>
-                          <h3 className="font-semibold text-lg">{evolution.patient_name}</h3>
+                          <h3 className="font-semibold text-lg">{getPatientName(evolution.patient_id)}</h3>
                           <p className="text-sm text-muted-foreground">
-                            Por: {evolution.professional_name} • {new Date(evolution.created_at).toLocaleDateString('pt-BR')}
+                            Profissional: {getProfessionalName(evolution.professional_id)}
                           </p>
                         </div>
                         <Badge className="bg-warning text-warning-foreground">
@@ -960,7 +967,7 @@ const Evolucoes = () => {
                 {selectedEvolucao.status === 'Pendente de Supervisão' && canSupervise
                   ? 'Supervisão de Evolução'
                   : 'Visualizar Evolução'
-                } - {selectedEvolucao.patient_name}
+                } - {getPatientName(selectedEvolucao.patient_id)}
               </DialogTitle>
             </DialogHeader>
             
@@ -970,7 +977,7 @@ const Evolucoes = () => {
                   {selectedEvolucao.status}
                 </Badge>
                 <span className="text-sm text-muted-foreground">
-                  {selectedEvolucao.professional_name} • {new Date(selectedEvolucao.created_at).toLocaleDateString()}
+                  {getProfessionalName(selectedEvolucao.professional_id)}
                 </span>
               </div>
               
@@ -1043,7 +1050,7 @@ const Evolucoes = () => {
       {showAdendum && selectedEvolutionForAdendum && (
         <EvolutionAdendum
           evolutionId={selectedEvolutionForAdendum}
-          patientName={evolutions.find(e => e.id === selectedEvolutionForAdendum)?.patient_name || ''}
+          patientName={getPatientName(evolutions.find(e => e.id === selectedEvolutionForAdendum)?.patient_id || "")}
           isOpen={showAdendum}
           onClose={() => {
             setShowAdendum(false);
