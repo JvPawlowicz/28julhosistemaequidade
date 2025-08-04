@@ -2,7 +2,7 @@ import * as React from 'react';
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useAuth } from "./useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Tables } from '@/integrations/supabase/types';
+import { Tables, Enums } from '@/integrations/supabase/types';
 
 export interface Unit {
   id: string;
@@ -21,13 +21,10 @@ export interface Professional {
   id: string;
   name: string;
   email: string;
-  role: string;
-  specialty: string;
+  role: Enums<'app_role'> | 'responsavel'; // Use Supabase enum for roles, add 'responsavel'
+  specialty: Enums<'specialty'> | null; // Use Supabase enum for specialty
   units: string[]; // IDs das unidades onde pode atuar
-  permissions: string[];
-  profile?: {
-    requires_supervision?: boolean;
-  };
+  requires_supervision: boolean; // Directly from profiles table
 }
 
 interface MultiTenantContextType {
@@ -67,7 +64,7 @@ export const MultiTenantProvider = ({ children }: MultiTenantProviderProps) => {
           settings: { // Mock settings as they are not in the units table schema
             workingHours: { start: "08:00", end: "18:00" },
             timezone: "America/Sao_Paulo",
-            specialties: ["Psicologia", "Terapia Ocupacional", "Fonoaudiologia"]
+            specialties: ["psicologia", "terapia_ocupacional", "fonoaudiologia"] // Use enum values
           }
         }));
         setAvailableUnits(formattedUnits);
@@ -82,46 +79,78 @@ export const MultiTenantProvider = ({ children }: MultiTenantProviderProps) => {
   useEffect(() => {
     async function fetchUserProfileAndSetUnit() {
       if (user && availableUnits.length > 0) {
+        // Fetch profile data
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id, full_name, email, requires_supervision, unit_id')
           .eq('user_id', user.id)
           .single();
 
-        if (!profileError && profileData) {
-          const userProfessional: Professional = {
-            id: user.id,
-            name: profileData.full_name || user.email || '',
-            email: user.email || '',
-            role: profileData.status || 'terapeuta', // Using 'status' as role
-            specialty: profileData.council_type || '', // Using 'council_type' as specialty
-            units: profileData.unit_id ? [profileData.unit_id] : [], // Assuming unit_id is the primary unit
-            permissions: [], // Permissions are hardcoded in PermissionsContext for now
-            profile: {
-              requires_supervision: profileData.requires_supervision || false
-            },
-          };
-          setCurrentUser(userProfessional);
+        // Fetch user roles
+        const { data: userRolesData, error: userRolesError } = await supabase
+          .from('user_roles')
+          .select('role, specialty, unit_id')
+          .eq('user_id', user.id);
 
-          // Set initial unit based on user's primary unit or first available
-          const storedUnitId = localStorage.getItem('selectedUnit');
-          let initialUnit = null;
-
-          if (storedUnitId && userProfessional.units.includes(storedUnitId)) {
-            initialUnit = availableUnits.find(u => u.id === storedUnitId);
-          } else if (userProfessional.units.length > 0) {
-            initialUnit = availableUnits.find(u => u.id === userProfessional.units[0]);
-          } else if (userProfessional.role === 'admin' && availableUnits.length > 0) {
-            // Admins can see all units, default to the first one if no specific unit is assigned
-            initialUnit = availableUnits[0];
-          }
-          
-          if (initialUnit) {
-            setCurrentUnit(initialUnit);
-            localStorage.setItem('selectedUnit', initialUnit.id);
-          }
-        } else {
+        if (profileError) {
           console.error('Error fetching user profile:', profileError);
+          return;
+        }
+        if (userRolesError) {
+          console.error('Error fetching user roles:', userRolesError);
+          return;
+        }
+
+        // Determine the primary role and associated units
+        let primaryRole: Enums<'app_role'> | 'responsavel' = 'responsavel'; // Default for non-professional users
+        let userSpecialty: Enums<'specialty'> | null = null;
+        let assignedUnitIds: string[] = [];
+
+        if (userRolesData && userRolesData.length > 0) {
+          // Prioritize admin, then coordinator, then therapist/estagiario, then recepcao
+          const rolesOrder: (Enums<'app_role'>)[] = ['admin', 'coordenador', 'terapeuta', 'estagiario', 'recepcao'];
+          const sortedRoles = userRolesData.sort((a, b) => rolesOrder.indexOf(a.role) - rolesOrder.indexOf(b.role));
+          
+          primaryRole = sortedRoles[0].role;
+          userSpecialty = sortedRoles[0].specialty;
+          assignedUnitIds = userRolesData.map(ur => ur.unit_id).filter((id): id is string => id !== null);
+        } else if (profileData) {
+          // Fallback if no user_roles, assume a basic role based on profile status or default
+          // This part might need adjustment based on how you assign roles initially
+          primaryRole = (profileData.status as Enums<'app_role'>) || 'terapeuta'; 
+          userSpecialty = (profileData.council_type as Enums<'specialty'>) || null;
+          if (profileData.unit_id) {
+            assignedUnitIds.push(profileData.unit_id);
+          }
+        }
+
+        const userProfessional: Professional = {
+          id: user.id,
+          name: profileData.full_name || user.email || '',
+          email: user.email || '',
+          role: primaryRole,
+          specialty: userSpecialty,
+          units: assignedUnitIds,
+          requires_supervision: profileData.requires_supervision || false,
+        };
+        setCurrentUser(userProfessional);
+
+        // Set initial unit based on user's primary unit or first available
+        const storedUnitId = localStorage.getItem('selectedUnit');
+        let initialUnit = null;
+
+        if (storedUnitId && userProfessional.units.includes(storedUnitId)) {
+          initialUnit = availableUnits.find(u => u.id === storedUnitId);
+        } else if (userProfessional.units.length > 0) {
+          initialUnit = availableUnits.find(u => u.id === userProfessional.units[0]);
+        } else if (userProfessional.role === 'admin' && availableUnits.length > 0) {
+          // Admins can see all units, default to the first one if no specific unit is assigned
+          initialUnit = availableUnits[0];
+        }
+        
+        if (initialUnit) {
+          setCurrentUnit(initialUnit);
+          localStorage.setItem('selectedUnit', initialUnit.id);
         }
       }
     }

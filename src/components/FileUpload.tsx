@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Upload, File, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showError } from '@/utils/notifications'; // Import new notification utility
 
 interface FileUploadProps {
   onFilesUploaded: (urls: string[]) => void;
@@ -35,26 +35,17 @@ const FileUpload = ({
   folderPath = 'evolutions'
 }: FileUploadProps) => {
   const [files, setFiles] = useState<UploadedFile[]>([]);
-  const { toast } = useToast();
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (files.length + acceptedFiles.length > maxFiles) {
-      toast({
-        title: "Limite excedido",
-        description: `Máximo de ${maxFiles} arquivos permitidos`,
-        variant: "destructive"
-      });
+      showError("Limite excedido", `Máximo de ${maxFiles} arquivos permitidos.`);
       return;
     }
 
     // Validar tamanho dos arquivos
     const oversizedFiles = acceptedFiles.filter(file => file.size > maxSize * 1024 * 1024);
     if (oversizedFiles.length > 0) {
-      toast({
-        title: "Arquivo muito grande",
-        description: `Arquivos devem ter no máximo ${maxSize}MB`,
-        variant: "destructive"
-      });
+      showError("Arquivo muito grande", `Arquivos devem ter no máximo ${maxSize}MB.`);
       return;
     }
 
@@ -133,12 +124,9 @@ const FileUpload = ({
     
     if (successfulUrls.length > 0) {
       onFilesUploaded(successfulUrls);
-      toast({
-        title: "Upload concluído",
-        description: `${successfulUrls.length} arquivo(s) enviado(s) com sucesso`,
-      });
+      showSuccess("Upload concluído", `${successfulUrls.length} arquivo(s) enviado(s) com sucesso.`);
     }
-  }, [files, maxFiles, maxSize, onFilesUploaded, bucketName, folderPath, toast]);
+  }, [files, maxFiles, maxSize, onFilesUploaded, bucketName, folderPath]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,

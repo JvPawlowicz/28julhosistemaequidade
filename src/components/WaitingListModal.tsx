@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showError } from '@/utils/notifications'; // Import new notification utility
 import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/contexts/usePermissions";
 import { 
@@ -52,7 +52,6 @@ interface WaitingListItem {
 }
 
 const WaitingListModal = () => {
-  const { toast } = useToast();
   const { hasPermission } = usePermissions();
   const [isOpen, setIsOpen] = useState(false);
   const [waitingList, setWaitingList] = useState<WaitingListItem[]>([]);
@@ -100,13 +99,10 @@ const WaitingListModal = () => {
       ];
       setWaitingList(mockData);
     } catch (error) {
-      toast({
-        title: "Erro ao carregar fila de espera",
-        variant: "destructive"
-      });
+      showError("Erro ao carregar fila de espera");
     }
     setLoading(false);
-  }, [toast]);
+  }, []);
 
   const updateStatus = async (id: string, status: string) => {
     try {
@@ -119,12 +115,9 @@ const WaitingListModal = () => {
         )
       );
 
-      toast({ title: "Status atualizado com sucesso" });
+      showSuccess("Status atualizado com sucesso");
     } catch (error) {
-      toast({
-        title: "Erro ao atualizar status",
-        variant: "destructive"
-      });
+      showError("Erro ao atualizar status");
     }
   };
 

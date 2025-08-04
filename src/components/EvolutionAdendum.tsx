@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Send, FileText } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showError } from '@/utils/notifications'; // Import new notification utility
 
 interface EvolutionAdendumProps {
   evolutionId: string;
@@ -19,15 +19,10 @@ interface EvolutionAdendumProps {
 const EvolutionAdendum = ({ evolutionId, patientName, isOpen, onClose, onSuccess }: EvolutionAdendumProps) => {
   const [adendumContent, setAdendumContent] = useState('');
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
 
   const handleCreateAdendum = async () => {
     if (!adendumContent.trim()) {
-      toast({
-        title: "Erro",
-        description: "O conteúdo do adendo é obrigatório",
-        variant: "destructive"
-      });
+      showError("Erro", "O conteúdo do adendo é obrigatório.");
       return;
     }
 
@@ -63,21 +58,14 @@ const EvolutionAdendum = ({ evolutionId, patientName, isOpen, onClose, onSuccess
 
       if (insertError) throw insertError;
 
-      toast({
-        title: "Sucesso",
-        description: "Adendo criado e assinado com sucesso",
-      });
+      showSuccess("Sucesso", "Adendo criado e assinado com sucesso.");
 
       setAdendumContent('');
       onClose();
       onSuccess();
     } catch (error) {
       console.error('Error creating adendum:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao criar adendo",
-        variant: "destructive"
-      });
+      showError("Erro", "Erro ao criar adendo.");
     } finally {
       setLoading(false);
     }

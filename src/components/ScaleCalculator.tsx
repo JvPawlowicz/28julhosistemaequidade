@@ -5,14 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calculator, Info, TrendingUp, AlertCircle } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showError } from '@/utils/notifications'; // Import new notification utility
 
 interface ScaleCalculatorProps {
   selectedScale?: string;
 }
 
 export const ScaleCalculator = ({ selectedScale }: ScaleCalculatorProps) => {
-  const { toast } = useToast();
   const [activeScale, setActiveScale] = useState(selectedScale || "");
   const [scores, setScores] = useState<Record<string, number>>({});
   const [result, setResult] = useState<{
@@ -129,11 +128,7 @@ export const ScaleCalculator = ({ selectedScale }: ScaleCalculatorProps) => {
 
   const calculateResult = () => {
     if (!activeScale || !scaleDefinitions[activeScale as keyof typeof scaleDefinitions]) {
-      toast({
-        title: "Erro",
-        description: "Selecione uma escala válida",
-        variant: "destructive"
-      });
+      showError("Erro", "Selecione uma escala válida.");
       return;
     }
 
@@ -146,11 +141,7 @@ export const ScaleCalculator = ({ selectedScale }: ScaleCalculatorProps) => {
     );
 
     if (!classification) {
-      toast({
-        title: "Erro no cálculo",
-        description: "Pontuação fora do intervalo válido",
-        variant: "destructive"
-      });
+      showError("Erro no cálculo", "Pontuação fora do intervalo válido.");
       return;
     }
 
@@ -164,10 +155,7 @@ export const ScaleCalculator = ({ selectedScale }: ScaleCalculatorProps) => {
       recommendations
     });
 
-    toast({
-      title: "Cálculo realizado",
-      description: `Total: ${total} pontos - ${classification.label}`
-    });
+    showSuccess("Cálculo realizado", `Total: ${total} pontos - ${classification.label}.`);
   };
 
   const generateRecommendations = (scale: string, classification: string): string[] => {
@@ -200,11 +188,35 @@ export const ScaleCalculator = ({ selectedScale }: ScaleCalculatorProps) => {
         "Moderadamente baixo": [
           "Intervenções focadas em áreas específicas de dificuldade",
           "Apoio para desenvolvimento de autonomia",
-          "Orientação familiar para generalização"
+          "Orientação familiar para generalização",
+          "Reavaliação em 6 meses"
         ],
         "Adequado": [
           "Manter estímulos apropriados ao desenvolvimento",
           "Monitoramento regular do progresso"
+        ]
+      },
+      "SNAP-IV": {
+        "Sintomas mínimos": [
+          "Monitoramento contínuo do comportamento",
+          "Orientação aos pais sobre estratégias de manejo"
+        ],
+        "Sintomas leves": [
+          "Intervenções comportamentais em ambiente escolar e familiar",
+          "Estratégias de organização e planejamento",
+          "Reavaliação em 3 meses"
+        ],
+        "Sintomas moderados": [
+          "Avaliação neuropsicológica aprofundada",
+          "Intervenção multidisciplinar (psicologia, psicopedagogia)",
+          "Considerar suporte medicamentoso se indicado",
+          "Reavaliação em 3 meses"
+        ],
+        "Sintomas severos": [
+          "Intervenção intensiva e multidisciplinar",
+          "Acompanhamento psiquiátrico para manejo medicamentoso",
+          "Suporte escolar e adaptações curriculares",
+          "Reavaliação em 1 mês"
         ]
       }
     };

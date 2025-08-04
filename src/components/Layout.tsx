@@ -23,17 +23,21 @@ import {
   MessageSquare,
   Eye,
   ClipboardCheck,
-  Activity
+  Activity,
+  Brain, // For Smart Scheduler / Protocols
+  Book, // For Resource Bank
+  Heart, // For Multidisciplinary Management
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { Enums } from "@/integrations/supabase/types";
 
 const Layout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { signOut, user } = useAuth();
-  const { getUserRole, isAdmin } = usePermissions();
+  const { getUserRole, isAdmin, isCoordinator, isTerapeuta, isRecepcao } = usePermissions();
   const { currentUnit } = useMultiTenant();
   
   const userRole = getUserRole();
@@ -41,53 +45,67 @@ const Layout = () => {
   const navigationItems = {
     admin: [
       { icon: Home, label: "Dashboard Admin", path: "/app/dashboard/admin" },
+      { icon: BarChart3, label: "Dashboard Qualidade", path: "/app/dashboard/quality" }, // NEW
       { icon: Calendar, label: "Agenda Global", path: "/app/agenda" },
       { icon: Users, label: "Pacientes", path: "/app/pacientes" },
       { icon: FileText, label: "Evoluções", path: "/app/evolucoes" },
-      { icon: ClipboardCheck, label: "Protocolos de Avaliação", path: "/app/protocolos" },
+      { icon: ClipboardCheck, label: "Protocolos ABA", path: "/app/protocolos" }, // Existing
+      { icon: Brain, label: "Protocolos Avaliação", path: "/app/protocolos-avaliacao" }, // NEW
       { icon: Activity, label: "Coleta de Dados", path: "/app/coleta-dados" },
+      { icon: Heart, label: "Gestão Multidisciplinar", path: "/app/gestao-multidisciplinar" }, // NEW
+      { icon: Book, label: "Banco de Recursos", path: "/app/banco-recursos" }, // NEW
       { icon: UserCheck, label: "Usuários", path: "/app/usuarios" },
       { icon: BarChart3, label: "Relatórios", path: "/app/relatorios" },
+      { icon: BarChart3, label: "Relatórios Expandidos", path: "/app/relatorios-expandidos" }, // NEW
       { icon: Settings, label: "Configurações", path: "/app/configuracoes" },
       { separator: true, label: "Outras Visões" },
       { icon: Eye, label: "Visão Terapeuta", path: "/app/dashboard/terapeuta" },
       { icon: Eye, label: "Visão Recepção", path: "/app/dashboard/recepcao" },
     ],
     coordenador: [
-      { icon: Home, label: "Dashboard", path: "/app/dashboard/coordenador" },
+      { icon: Home, label: "Dashboard Coordenador", path: "/app/dashboard/admin" }, // Coordenador uses Admin dashboard for now
+      { icon: BarChart3, label: "Dashboard Qualidade", path: "/app/dashboard/quality" }, // NEW
       { icon: Calendar, label: "Agenda Unidade", path: "/app/agenda" },
       { icon: Users, label: "Pacientes", path: "/app/pacientes" },
       { icon: FileText, label: "Prontuários", path: "/app/prontuarios" },
       { icon: FileText, label: "Evoluções", path: "/app/evolucoes" },
-      { icon: ClipboardCheck, label: "Protocolos de Avaliação", path: "/app/protocolos" },
-      { icon: MessageSquare, label: "Supervisão", path: "/app/supervisao" },
+      { icon: ClipboardCheck, label: "Protocolos ABA", path: "/app/protocolos" }, // Existing
+      { icon: Brain, label: "Protocolos Avaliação", path: "/app/protocolos-avaliacao" }, // NEW
+      { icon: Heart, label: "Gestão Multidisciplinar", path: "/app/gestao-multidisciplinar" }, // NEW
+      { icon: Book, label: "Banco de Recursos", path: "/app/banco-recursos" }, // NEW
+      { icon: MessageSquare, label: "Supervisão", path: "/app/evolucoes" }, // Evoluções page handles supervision tab
       { icon: BarChart3, label: "Relatórios", path: "/app/relatorios" },
+      { icon: BarChart3, label: "Relatórios Expandidos", path: "/app/relatorios-expandidos" }, // NEW
     ],
     terapeuta: [
-      { icon: Home, label: "Dashboard", path: "/app/dashboard/terapeuta" },
+      { icon: Home, label: "Dashboard Terapeuta", path: "/app/dashboard/terapeuta" },
       { icon: Calendar, label: "Minha Agenda", path: "/app/agenda" },
       { icon: Users, label: "Meus Pacientes", path: "/app/pacientes" },
       { icon: FileText, label: "Prontuários", path: "/app/prontuarios" },
       { icon: FileText, label: "Evoluções", path: "/app/evolucoes" },
-      { icon: ClipboardCheck, label: "Protocolos de Avaliação", path: "/app/protocolos" },
+      { icon: ClipboardCheck, label: "Protocolos ABA", path: "/app/protocolos" }, // Existing
+      { icon: Brain, label: "Protocolos Avaliação", path: "/app/protocolos-avaliacao" }, // NEW
       { icon: Activity, label: "Coleta de Dados", path: "/app/coleta-dados" },
+      { icon: Book, label: "Banco de Recursos", path: "/app/banco-recursos" }, // NEW
     ],
     estagiario: [
-      { icon: Home, label: "Dashboard", path: "/app/dashboard/terapeuta" },
+      { icon: Home, label: "Dashboard Estagiário", path: "/app/dashboard/terapeuta" }, // Estagiário uses Terapeuta dashboard
       { icon: Calendar, label: "Minha Agenda", path: "/app/agenda" },
       { icon: Users, label: "Meus Pacientes", path: "/app/pacientes" },
       { icon: FileText, label: "Prontuários", path: "/app/prontuarios" },
       { icon: FileText, label: "Evoluções", path: "/app/evolucoes" },
-      { icon: ClipboardCheck, label: "Protocolos de Avaliação", path: "/app/protocolos" },
+      { icon: ClipboardCheck, label: "Protocolos ABA", path: "/app/protocolos" }, // Existing
+      { icon: Brain, label: "Protocolos Avaliação", path: "/app/protocolos-avaliacao" }, // NEW
       { icon: Activity, label: "Coleta de Dados", path: "/app/coleta-dados" },
+      { icon: Book, label: "Banco de Recursos", path: "/app/banco-recursos" }, // NEW
     ],
     recepcao: [
-      { icon: Home, label: "Dashboard", path: "/app/dashboard/recepcao" },
+      { icon: Home, label: "Dashboard Recepção", path: "/app/dashboard/recepcao" },
       { icon: Calendar, label: "Agenda", path: "/app/agenda" },
       { icon: Users, label: "Pacientes", path: "/app/pacientes" },
     ],
     responsavel: [
-      { icon: Home, label: "Dashboard", path: "/app/dashboard/responsavel" },
+      { icon: Home, label: "Dashboard Família", path: "/app/dashboard/responsavel" },
       { icon: Calendar, label: "Agendamentos", path: "/app/agenda" },
       { icon: FileText, label: "Documentos", path: "/app/documentos" },
       { icon: MessageSquare, label: "Contato", path: "/app/contato" },
@@ -96,7 +114,7 @@ const Layout = () => {
 
   const currentNavItems = navigationItems[userRole as keyof typeof navigationItems] || [];
   
-  const roleDisplayNames = {
+  const roleDisplayNames: Record<Enums<'app_role'> | 'responsavel', string> = {
     admin: "Administrador",
     coordenador: "Coordenador Clínico", 
     terapeuta: "Terapeuta",
@@ -105,7 +123,7 @@ const Layout = () => {
     responsavel: "Portal das Famílias"
   };
 
-  const roleColors = {
+  const roleColors: Record<Enums<'app_role'> | 'responsavel', string> = {
     admin: 'bg-primary/10 text-primary border-primary/20',
     coordenador: 'bg-secondary/10 text-secondary border-secondary/20',
     terapeuta: 'bg-success/10 text-success border-success/20',
@@ -128,16 +146,16 @@ const Layout = () => {
           <div>
             <h2 className="font-semibold text-primary">Equidade+</h2>
             <div className={`inline-flex items-center gap-2 mt-1 px-2 py-0.5 rounded-full text-xs font-semibold border ${roleColors[userRole] || 'bg-muted text-muted-foreground border-border'}`}
-              aria-label={`Nível de acesso: ${roleDisplayNames[userRole as keyof typeof roleDisplayNames]}`}
+              aria-label={`Nível de acesso: ${roleDisplayNames[userRole]}`}
               role="status"
             >
-              {roleDisplayNames[userRole as keyof typeof roleDisplayNames]}
+              {roleDisplayNames[userRole]}
             </div>
           </div>
         </div>
         
-        {/* Mostrar unidade atual para admins */}
-        {isAdmin() && currentUnit && (
+        {/* Mostrar unidade atual para admins e coordenadores */}
+        {(isAdmin() || isCoordinator()) && currentUnit && (
           <div className="mt-3 p-2 bg-primary-light rounded-lg">
             <p className="text-xs text-primary font-medium">Unidade Atual:</p>
             <p className="text-sm font-semibold text-primary">{currentUnit.name}</p>
@@ -145,7 +163,7 @@ const Layout = () => {
         )}
       </div>
 
-      <nav className="flex-1 p-4 space-y-2">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {currentNavItems.map((item, index) => {
           if (item.separator) {
             return (
@@ -215,8 +233,8 @@ const Layout = () => {
         {/* Top Bar */}
         <header className="h-16 bg-card border-b border-medical-border flex items-center justify-between px-6">
           <div className="flex items-center gap-4">
-            {/* Unit Selector - mais importante para admin */}
-            {isAdmin() && <UnitSelector />}
+            {/* Unit Selector - mais importante para admin e coordenador */}
+            {(isAdmin() || isCoordinator()) && <UnitSelector />}
             
             {/* Indicador de dados filtrados */}
             <UnitDataIndicator />
@@ -228,7 +246,7 @@ const Layout = () => {
             <div className="text-right">
               <p className="text-sm font-medium">{user?.email || "Usuário"}</p>
               <p className="text-xs text-muted-foreground">
-                {roleDisplayNames[userRole as keyof typeof roleDisplayNames]}
+                {roleDisplayNames[userRole]}
               </p>
             </div>
           </div>

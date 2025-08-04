@@ -26,14 +26,13 @@ import {
   Award,
   BookOpen
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showInfo } from '@/utils/notifications'; // Import new notification utility
 
 const RelatoriosExpandidos = () => {
   const [periodo, setPeriodo] = useState("mes");
   const [unidade, setUnidade] = useState("todas");
   const [especialidade, setEspecialidade] = useState("todas");
   const [deficiencia, setDeficiencia] = useState("todas");
-  const { toast } = useToast();
 
   const metricas = {
     atendimentos: {
@@ -138,16 +137,10 @@ const RelatoriosExpandidos = () => {
   ];
 
   const handleGerarRelatorio = (tipo: string, formato: string) => {
-    toast({
-      title: "Gerando relatório multidisciplinar...",
-      description: `Seu relatório especializado em ${formato} será processado.`
-    });
+    showInfo("Gerando relatório multidisciplinar...", `Seu relatório especializado em ${formato} será processado.`);
     
     setTimeout(() => {
-      toast({
-        title: "Relatório gerado com sucesso!",
-        description: `Relatório ${tipo} disponível para download.`
-      });
+      showSuccess("Relatório gerado com sucesso!", `Relatório ${tipo} disponível para download.`);
     }, 2500);
   };
 
@@ -396,7 +389,7 @@ const RelatoriosExpandidos = () => {
                     </div>
                     <div className="w-full bg-muted rounded-full h-2">
                       <div 
-                        className="bg-primary h-2 rounded-full transition-all"
+                        className="bg-primary h-2 rounded-full"
                         style={{ width: `${def.progresso_medio}%` }}
                       />
                     </div>

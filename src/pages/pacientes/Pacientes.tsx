@@ -8,7 +8,7 @@ import { ImportPatientModal } from "@/components/ImportPatientModal";
 import WaitingListModal from "@/components/WaitingListModal";
 import { useMultiTenant } from "@/contexts/useMultiTenant";
 import { usePermissions } from "@/contexts/usePermissions";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showError } from '@/utils/notifications'; // Import new notification utility
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Loading } from "@/components/ui/loading";
@@ -31,7 +31,6 @@ const Pacientes = () => {
   const [filterStatus, setFilterStatus] = useState("todos");
   const [isNewPatientDialogOpen, setIsNewPatientDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
   const { currentUnit, isAdmin, availableUnits } = useMultiTenant(); // Destructure availableUnits
   const { hasPermission } = usePermissions();
 
@@ -70,15 +69,11 @@ const Pacientes = () => {
       setPatients(data || []);
     } catch (error) {
       console.error('Error fetching patients:', error);
-      toast({
-        title: "Erro ao carregar pacientes",
-        description: "Não foi possível carregar os dados dos pacientes.",
-        variant: "destructive"
-      });
+      showError("Erro ao carregar pacientes", "Não foi possível carregar os dados dos pacientes.");
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, currentUnit, toast]);
+  }, [isAdmin, currentUnit]);
 
   useEffect(() => {
     if (hasPermission('pacientes', 'view')) {
@@ -104,11 +99,7 @@ const Pacientes = () => {
 
   const handleCreatePatient = async () => {
     if (!newPatientData.full_name || !newPatientData.birth_date || !newPatientData.primary_guardian_name || !newPatientData.phone || !newPatientData.unit_id || !newPatientData.status) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Preencha todos os campos obrigatórios.",
-        variant: "destructive"
-      });
+      showError("Campos obrigatórios", "Preencha todos os campos obrigatórios.");
       return;
     }
 
@@ -138,7 +129,7 @@ const Pacientes = () => {
           phone: newPatientData.phone,
           diagnosis: newPatientData.diagnosis,
           unit_id: newPatientData.unit_id,
-          status: newPatientData.status, // Removed Enums cast
+          status: newPatientData.status, 
           primary_guardian_id: guardianData.id,
         })
         .select(`
@@ -157,17 +148,10 @@ const Pacientes = () => {
       });
       setIsNewPatientDialogOpen(false);
       
-      toast({
-        title: "Paciente cadastrado",
-        description: `${patientData.full_name} foi adicionado com sucesso.`
-      });
+      showSuccess("Paciente cadastrado", `${patientData.full_name} foi adicionado com sucesso.`);
     } catch (error) {
       console.error('Error creating patient:', error);
-      toast({
-        title: "Erro ao cadastrar paciente",
-        description: "Não foi possível cadastrar o paciente.",
-        variant: "destructive"
-      });
+      showError("Erro ao cadastrar paciente", "Não foi possível cadastrar o paciente.");
     }
   };
 
@@ -215,7 +199,7 @@ const Pacientes = () => {
             <Plus className="h-4 w-4" />
             Novo Paciente
           </Button>
-          <ImportPatientModal onImportComplete={() => toast({ title: "Pacientes importados com sucesso!" })} />
+          <ImportPatientModal onImportComplete={() => showSuccess("Pacientes importados com sucesso!")} />
           <WaitingListModal />
         </div>
       </div>

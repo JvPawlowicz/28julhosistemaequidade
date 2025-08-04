@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import { usePermissions } from "@/contexts/usePermissions";
 import { useMultiTenant } from "@/contexts/useMultiTenant";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showError, showInfo } from '@/utils/notifications'; // Import new notification utility
 import { supabase } from "@/integrations/supabase/client";
 import EvolutionNotifications from "@/components/EvolutionNotifications";
 import EvolutionAdendum from "@/components/EvolutionAdendum";
@@ -76,7 +76,6 @@ interface Professional {
 
 const Evolucoes = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { isAdmin, getUserRole, hasPermission } = usePermissions();
   const { currentUnit } = useMultiTenant();
   
@@ -90,7 +89,7 @@ const Evolucoes = () => {
   
   // Estado dos dados
   const [evolutions, setEvolutions] = useState<Evolution[]>([]);
-  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
+  const [userProfiles, setUserProfiles] = useState<Professional[]>([]); // Renamed from userRoles for clarity
   const [currentUser, setCurrentUser] = useState<Professional | null>(null);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [realizedAppointments, setRealizedAppointments] = useState<Appointment[]>([]);
@@ -137,35 +136,27 @@ const Evolucoes = () => {
       setEvolutions(formattedData);
     } catch (error) {
       console.error('Error fetching evolutions:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar evoluções",
-        variant: "destructive"
-      });
+      showError("Erro ao carregar evoluções", "Não foi possível buscar os dados.");
     }
-  }, [toast]);
+  }, []);
 
   const initializeData = useCallback(async () => {
     try {
       setLoading(true);
       await Promise.all([
         fetchCurrentUser(),
-        fetchUserRoles(),
+        fetchUserProfiles(), // Changed from fetchUserRoles
         fetchEvolutions(),
         fetchPatients(),
         fetchRealizedAppointments()
       ]);
     } catch (error) {
       console.error('Error initializing data:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar dados iniciais",
-        variant: "destructive"
-      });
+      showError("Erro ao carregar dados iniciais", "Tente recarregar a página.");
     } finally {
       setLoading(false);
     }
-  }, [fetchEvolutions, toast]);
+  }, [fetchEvolutions]);
 
   useEffect(() => {
     initializeData();
@@ -182,15 +173,21 @@ const Evolucoes = () => {
         .eq('user_id', user.id)
         .single();
         
-      // Ao usar setCurrentUser, garanta todos os campos obrigatórios:
+      // Fetch user_roles to get the actual role and specialty
+      const { data: userRolesData } = await supabase
+        .from('user_roles')
+        .select('role, specialty')
+        .eq('user_id', user.id)
+        .single();
+
       setCurrentUser({
         id: user.id,
-        name: user.user_metadata?.name || user.user_metadata?.full_name || "",
-        email: user.email,
-        role: user.role,
-        specialty: user.user_metadata?.specialty || "",
-        units: user.user_metadata?.units || [],
-        permissions: user.user_metadata?.permissions || [],
+        name: profile?.full_name || user.user_metadata?.full_name || user.email || '',
+        email: user.email || '',
+        role: userRolesData?.role || 'terapeuta', // Use role from user_roles
+        specialty: userRolesData?.specialty || '', // Use specialty from user_roles
+        units: profile?.unit_id ? [profile.unit_id] : [], // Assuming unit_id is the primary unit
+        permissions: [], // Permissions are handled by PermissionsContext
         profile: profile,
       });
     } catch (error) {
@@ -198,20 +195,16 @@ const Evolucoes = () => {
     }
   };
 
-  const fetchUserRoles = async () => {
+  const fetchUserProfiles = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       const { data, error } = await supabase
-        .from('user_roles')
-        .select('role, specialty')
-        .eq('user_id', user.id);
+        .from('profiles')
+        .select('id, full_name, requires_supervision');
 
       if (error) throw error;
-      setUserRoles(data || []);
+      setUserProfiles(data || []);
     } catch (error) {
-      console.error('Error fetching user roles:', error);
+      console.error('Error fetching user profiles:', error);
     }
   };
 
@@ -259,11 +252,7 @@ const Evolucoes = () => {
       if (!currentUser) return;
 
       if (!formData.patient_id || !formData.appointment_id) {
-        toast({
-          title: "Erro",
-          description: "Selecione um paciente e agendamento",
-          variant: "destructive"
-        });
+        showError("Campos obrigatórios", "Selecione um paciente e agendamento.");
         return;
       }
 
@@ -293,25 +282,19 @@ const Evolucoes = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Sucesso",
-        description: isDraft 
-          ? "Rascunho salvo com sucesso"
+      showSuccess("Sucesso", isDraft 
+          ? "Rascunho salvo com sucesso."
           : requiresSupervision 
-            ? "Evolução enviada para supervisão"
-            : "Evolução assinada e finalizada",
-      });
+            ? "Evolução enviada para supervisão."
+            : "Evolução assinada e finalizada.",
+      );
 
       setIsNewEvolucaoOpen(false);
       resetForm();
       fetchEvolutions();
     } catch (error) {
       console.error('Error creating evolution:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao criar evolução",
-        variant: "destructive"
-      });
+      showError("Erro ao criar evolução", "Não foi possível criar a evolução.");
     }
   };
 
@@ -333,14 +316,10 @@ const Evolucoes = () => {
           .eq('id', evolutionId);
 
         if (error) throw error;
-        toast({ title: "Sucesso", description: "Evolução aprovada e co-assinada" });
+        showSuccess("Evolução aprovada", "A evolução foi aprovada e co-assinada com sucesso.");
       } else {
         if (!supervisionFeedback.trim()) {
-          toast({
-            title: "Erro",
-            description: "Feedback é obrigatório para solicitar revisão",
-            variant: "destructive"
-          });
+          showError("Feedback obrigatório", "É necessário fornecer um feedback para solicitar revisão.");
           return;
         }
 
@@ -357,7 +336,7 @@ const Evolucoes = () => {
           .eq('id', evolutionId);
 
         if (error) throw error;
-        toast({ title: "Sucesso", description: "Evolução devolvida para revisão" });
+        showInfo("Revisão solicitada", "O estagiário foi notificado sobre as correções necessárias.");
         setSupervisionFeedback('');
       }
 
@@ -365,11 +344,7 @@ const Evolucoes = () => {
       setSelectedEvolucao(null);
     } catch (error) {
       console.error('Error handling supervision:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao processar supervisão",
-        variant: "destructive"
-      });
+      showError("Erro ao processar supervisão", "Não foi possível processar a supervisão.");
     }
   };
 
@@ -445,9 +420,8 @@ const Evolucoes = () => {
 
   // Helper para buscar nome do profissional
   function getProfessionalName(professional_id: string) {
-    // Buscar no array de profissionais se disponível, ou retornar o id
-    const prof = userRoles.find(u => u.role === professional_id);
-    return prof ? prof.role : professional_id;
+    const prof = userProfiles.find(p => p.id === professional_id);
+    return prof ? prof.full_name : professional_id;
   }
 
   return (
@@ -658,8 +632,8 @@ const Evolucoes = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos</SelectItem>
-                {evolutions
-                  .map(e => e.professional_id)
+                {userProfiles
+                  .map(p => p.id)
                   .filter((id, index, arr) => arr.indexOf(id) === index)
                   .map(id => (
                     <SelectItem key={id} value={id}>

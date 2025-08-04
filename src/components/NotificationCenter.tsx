@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showError } from '@/utils/notifications'; // Import new notification utility
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/useAuth";
 import { 
@@ -34,7 +34,6 @@ interface Notification {
 
 export const NotificationCenter = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -62,14 +61,11 @@ export const NotificationCenter = () => {
       ];
       setNotifications(mockNotifications);
     } catch (error) {
-      toast({
-        title: "Erro ao carregar notificações",
-        variant: "destructive"
-      });
+      showError("Erro ao carregar notificações");
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user]);
 
   const markAsRead = async (notificationId: string) => {
     // Mock implementation - will be replaced when types are updated
@@ -89,12 +85,9 @@ export const NotificationCenter = () => {
         prev.map(n => ({ ...n, read_at: new Date().toISOString() }))
       );
 
-      toast({ title: "Todas as notificações foram marcadas como lidas" });
+      showSuccess("Todas as notificações foram marcadas como lidas");
     } catch (error) {
-      toast({
-        title: "Erro ao marcar todas como lidas",
-        variant: "destructive"
-      });
+      showError("Erro ao marcar todas como lidas");
     }
   };
 
@@ -103,10 +96,7 @@ export const NotificationCenter = () => {
       // Mock implementation - will be replaced when types are updated
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
     } catch (error) {
-      toast({
-        title: "Erro ao excluir notificação",
-        variant: "destructive"
-      });
+      showError("Erro ao excluir notificação");
     }
   };
 

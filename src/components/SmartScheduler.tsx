@@ -20,7 +20,7 @@ import {
   Plus,
   Zap
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showError } from '@/utils/notifications'; // Import new notification utility
 
 interface SmartSchedulerProps {
   patientId?: number;
@@ -54,7 +54,6 @@ interface ScheduleSuggestion {
 }
 
 export const SmartScheduler = ({ patientId, patientName }: SmartSchedulerProps) => {
-  const { toast } = useToast();
   const [selectedTherapies, setSelectedTherapies] = useState<TherapySession[]>([]);
   const [preferredDays, setPreferredDays] = useState<string[]>([]);
   const [preferredTimes, setPreferredTimes] = useState({ start: "09:00", end: "17:00" });
@@ -116,11 +115,7 @@ export const SmartScheduler = ({ patientId, patientName }: SmartSchedulerProps) 
   // Simular algoritmo de otimização
   const generateOptimalSchedule = async () => {
     if (selectedTherapies.length === 0) {
-      toast({
-        title: "Erro",
-        description: "Selecione pelo menos uma terapia",
-        variant: "destructive"
-      });
+      showError("Erro", "Selecione pelo menos uma terapia.");
       return;
     }
 
@@ -227,10 +222,7 @@ export const SmartScheduler = ({ patientId, patientName }: SmartSchedulerProps) 
     setSuggestions(mockSuggestions);
     setIsAnalyzing(false);
 
-    toast({
-      title: "Análise concluída",
-      description: `${mockSuggestions.length} sugestões otimizadas geradas`
-    });
+    showSuccess("Análise concluída", `${mockSuggestions.length} sugestões otimizadas geradas.`);
   };
 
   const addTherapy = (therapy: any) => {

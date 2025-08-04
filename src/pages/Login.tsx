@@ -12,6 +12,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from '@/integrations/supabase/client';
+import { showSuccess, showError } from '@/utils/notifications'; // Import new notification utility
 
 
 // Schema de validação para login/cadastro profissional
@@ -107,11 +108,11 @@ const Login = () => {
       .single();
     if (!error && guardian) {
       localStorage.setItem('userRole', 'responsavel');
+      showSuccess('Login realizado com sucesso!', 'Bem-vindo ao Portal das Famílias.');
       // Você pode salvar mais dados do responsável se quiser
       navigate('/app/dashboard/responsavel');
     } else {
-      // Exibir erro de login
-      alert('CPF ou data de nascimento inválidos.');
+      showError('CPF ou data de nascimento inválidos.', 'Verifique suas credenciais e tente novamente.');
     }
   };
 

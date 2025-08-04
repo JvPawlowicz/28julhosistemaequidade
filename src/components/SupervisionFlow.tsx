@@ -14,7 +14,7 @@ import {
   Calendar
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showError, showInfo } from '@/utils/notifications'; // Import new notification utility
 import { usePermissions } from "@/contexts/usePermissions";
 
 interface PendingEvolution {
@@ -31,7 +31,6 @@ interface PendingEvolution {
 
 const SupervisionFlow = () => {
   const { hasPermission, getUserRole } = usePermissions();
-  const { toast } = useToast();
   const [selectedEvolution, setSelectedEvolution] = useState<PendingEvolution | null>(null);
   const [feedback, setFeedback] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -69,20 +68,13 @@ const SupervisionFlow = () => {
       )
     );
     
-    toast({
-      title: "Evolução aprovada",
-      description: "A evolução foi aprovada e co-assinada com sucesso."
-    });
+    showSuccess("Evolução aprovada", "A evolução foi aprovada e co-assinada com sucesso.");
     setIsDialogOpen(false);
   };
 
   const handleRequestRevision = (evolutionId: number) => {
     if (!feedback.trim()) {
-      toast({
-        title: "Feedback obrigatório",
-        description: "É necessário fornecer um feedback para solicitar revisão.",
-        variant: "destructive"
-      });
+      showError("Feedback obrigatório", "É necessário fornecer um feedback para solicitar revisão.");
       return;
     }
 
@@ -94,10 +86,7 @@ const SupervisionFlow = () => {
       )
     );
     
-    toast({
-      title: "Revisão solicitada",
-      description: "O estagiário foi notificado sobre as correções necessárias."
-    });
+    showInfo("Revisão solicitada", "O estagiário foi notificado sobre as correções necessárias.");
     setFeedback("");
     setIsDialogOpen(false);
   };

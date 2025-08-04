@@ -28,6 +28,7 @@ import {
   AlertCircle,
   TrendingUp
 } from "lucide-react";
+import { showSuccess } from '@/utils/notifications'; // Import new notification utility
 
 const PortalFamiliasExpanded = () => {
   const [activeTab, setActiveTab] = useState("overview");

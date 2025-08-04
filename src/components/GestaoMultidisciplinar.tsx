@@ -25,12 +25,11 @@ import {
   Eye,
   Ear
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showError } from '@/utils/notifications'; // Import new notification utility
 
 const GestaoMultidisciplinar = () => {
   const [novaReuniaoOpen, setNovaReuniaoOpen] = useState(false);
   const [novoPlanoOpen, setNovoPlanoOpen] = useState(false);
-  const { toast } = useToast();
 
   const reunioesEquipe = [
     {
@@ -154,18 +153,12 @@ const GestaoMultidisciplinar = () => {
   };
 
   const agendarReuniao = () => {
-    toast({
-      title: "Reunião agendada!",
-      description: "A reunião multidisciplinar foi agendada com sucesso."
-    });
+    showSuccess("Reunião agendada!", "A reunião multidisciplinar foi agendada com sucesso.");
     setNovaReuniaoOpen(false);
   };
 
   const criarPlano = () => {
-    toast({
-      title: "Plano criado!",
-      description: "O novo plano terapêutico integrado foi criado."
-    });
+    showSuccess("Plano criado!", "O novo plano terapêutico integrado foi criado.");
     setNovoPlanoOpen(false);
   };
 
@@ -330,7 +323,7 @@ const GestaoMultidisciplinar = () => {
                       <div className="space-y-1">
                         {reuniao.participantes.map((participante, i) => (
                           <div key={i} className="flex items-center gap-2 text-sm">
-                            <User className="h-3 w-3 text-muted-foreground" />
+                            <User className="h-3 w-3" />
                             {participante}
                           </div>
                         ))}
@@ -342,7 +335,7 @@ const GestaoMultidisciplinar = () => {
                       <div className="space-y-1">
                         {reuniao.objetivos.map((objetivo, i) => (
                           <div key={i} className="flex items-center gap-2 text-sm">
-                            <Target className="h-3 w-3 text-primary" />
+                            <Target className="h-3 w-3" />
                             {objetivo}
                           </div>
                         ))}
@@ -534,7 +527,7 @@ const GestaoMultidisciplinar = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg">
-                  <Users className="h-5 w-5 text-primary" />
+                  <Users className="h-5 w-5" />
                   Estagiários
                 </CardTitle>
               </CardHeader>

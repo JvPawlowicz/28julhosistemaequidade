@@ -14,7 +14,7 @@ import {
   X,
   Loader2
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showError } from '@/utils/notifications'; // Import new notification utility
 import { usePermissions } from "@/contexts/usePermissions";
 
 interface ImportPatientProps {
@@ -22,7 +22,6 @@ interface ImportPatientProps {
 }
 
 export const ImportPatientModal = ({ onImportComplete }: ImportPatientProps) => {
-  const { toast } = useToast();
   const { hasPermission } = usePermissions();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -52,11 +51,7 @@ export const ImportPatientModal = ({ onImportComplete }: ImportPatientProps) => 
         setSelectedFile(file);
         setImportResults(null);
       } else {
-        toast({
-          title: "Arquivo inválido",
-          description: "Por favor, selecione um arquivo Excel (.xlsx ou .xls)",
-          variant: "destructive"
-        });
+        showError("Arquivo inválido", "Por favor, selecione um arquivo Excel (.xlsx ou .xls).");
       }
     }
   };
@@ -95,10 +90,7 @@ Ana Costa Oliveira,22/07/2013,José Costa,(11) 88888-2222,jose@email.com,TDAH,Un
     setImportResults(mockResults);
     setIsImporting(false);
 
-    toast({
-      title: "Importação concluída",
-      description: `${mockResults.successful} pacientes importados com sucesso, ${mockResults.failed} com erro.`
-    });
+    showSuccess("Importação concluída", `${mockResults.successful} pacientes importados com sucesso, ${mockResults.failed} com erro.`);
 
     if (mockResults.successful > 0) {
       onImportComplete();

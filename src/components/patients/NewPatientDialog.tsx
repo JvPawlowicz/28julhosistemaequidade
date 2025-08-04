@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMultiTenant } from "@/contexts/useMultiTenant";
 import { Tables } from "@/integrations/supabase/types";
+import { showSuccess, showError } from '@/utils/notifications'; // Import new notification utility
 
 interface NewPatientData {
   full_name: string;

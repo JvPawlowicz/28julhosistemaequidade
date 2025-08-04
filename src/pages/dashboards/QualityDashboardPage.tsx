@@ -11,6 +11,7 @@ import {
   Calendar,
   FileText
 } from "lucide-react";
+import { showInfo } from '@/utils/notifications'; // Import new notification utility
 
 const QualityDashboardPage = () => {
   const { isAdmin, hasPermission } = usePermissions();

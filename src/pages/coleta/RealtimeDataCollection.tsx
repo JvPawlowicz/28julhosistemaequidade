@@ -22,7 +22,7 @@ import {
   BarChart3
 } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showError } from '@/utils/notifications'; // Import new notification utility
 
 interface DataPoint {
   id: string;
@@ -53,7 +53,6 @@ const RealtimeDataCollection = () => {
   const [sessionNotes, setSessionNotes] = useState('');
   const [patients, setPatients] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState('');
-  const { toast } = useToast();
 
   useEffect(() => {
     const handleOnlineStatus = () => setIsOnline(navigator.onLine);
@@ -94,11 +93,7 @@ const RealtimeDataCollection = () => {
 
   const startSession = () => {
     if (!selectedPatient || !targetBehavior) {
-      toast({
-        title: "Erro",
-        description: "Selecione um paciente e defina o comportamento alvo",
-        variant: "destructive"
-      });
+      showError("Erro", "Selecione um paciente e defina o comportamento alvo.");
       return;
     }
 
@@ -116,10 +111,7 @@ const RealtimeDataCollection = () => {
     setIsTimerRunning(true);
     setDataPoints([]);
     
-    toast({
-      title: "Sessão iniciada",
-      description: `Coletando dados para ${session.patient_name}`,
-    });
+    showSuccess("Sessão iniciada", `Coletando dados para ${session.patient_name}.`);
   };
 
   const recordData = (value: number) => {
@@ -181,10 +173,7 @@ const RealtimeDataCollection = () => {
     setDataPoints([]);
     setTimer(0);
     
-    toast({
-      title: "Sessão finalizada",
-      description: "Dados salvos com sucesso",
-    });
+    showSuccess("Sessão finalizada", "Dados salvos com sucesso.");
   };
 
   const formatTime = (seconds: number) => {

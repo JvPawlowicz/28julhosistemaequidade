@@ -28,7 +28,7 @@ import {
   ClipboardCheck
 } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showError } from '@/utils/notifications'; // Import new notification utility
 import { EmptyState } from "@/components/EmptyState";
 
 interface ProtocoloAvaliacao {
@@ -69,7 +69,6 @@ const ProtocolosAvaliacao = () => {
   const [loading, setLoading] = useState(true);
   const [showAvaliacaoModal, setShowAvaliacaoModal] = useState(false);
   const [categoriaFiltro, setCategoriaFiltro] = useState('todos');
-  const { toast } = useToast();
 
   // Protocolos expandidos para diferentes deficiências
   const protocolosEspecializados = [
@@ -133,6 +132,7 @@ const ProtocolosAvaliacao = () => {
       setProtocolos(protocolosExpandidos);
     } catch (error) {
       console.error('Error fetching protocols:', error);
+      showError("Erro ao carregar protocolos", "Não foi possível buscar os dados.");
     }
   };
 
@@ -160,6 +160,7 @@ const ProtocolosAvaliacao = () => {
       setAvaliacoes(avaliacoesFormatadas);
     } catch (error) {
       console.error('Error fetching assessments:', error);
+      showError("Erro ao carregar avaliações", "Não foi possível buscar os dados.");
     } finally {
       setLoading(false);
     }
@@ -181,11 +182,7 @@ const ProtocolosAvaliacao = () => {
 
   const iniciarNovaAvaliacao = async () => {
     if (!protocoloSelecionado || !pacienteSelecionado) {
-      toast({
-        title: "Erro",
-        description: "Selecione um protocolo e um paciente",
-        variant: "destructive"
-      });
+      showError("Erro", "Selecione um protocolo e um paciente.");
       return;
     }
 
@@ -221,17 +218,10 @@ const ProtocolosAvaliacao = () => {
       });
       setPontacoesDominio(pontuacoesIniciais);
 
-      toast({
-        title: "Avaliação iniciada",
-        description: "Nova avaliação criada com sucesso"
-      });
+      showSuccess("Avaliação iniciada", "Nova avaliação criada com sucesso.");
     } catch (error) {
       console.error('Error creating assessment:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao criar avaliação",
-        variant: "destructive"
-      });
+      showError("Erro ao criar avaliação", "Não foi possível criar a avaliação.");
     }
   };
 
@@ -250,10 +240,7 @@ const ProtocolosAvaliacao = () => {
 
       if (error) throw error;
 
-      toast({
-        title: "Avaliação salva",
-        description: "Avaliação concluída com sucesso"
-      });
+      showSuccess("Avaliação salva", "Avaliação concluída com sucesso.");
 
       setShowAvaliacaoModal(false);
       setAvaliacaoAtual(null);
@@ -262,11 +249,7 @@ const ProtocolosAvaliacao = () => {
       fetchAvaliacoes();
     } catch (error) {
       console.error('Error saving assessment:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao salvar avaliação",
-        variant: "destructive"
-      });
+      showError("Erro ao salvar avaliação", "Não foi possível salvar a avaliação.");
     }
   };
 

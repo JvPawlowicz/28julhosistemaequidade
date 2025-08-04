@@ -20,13 +20,12 @@ import {
   XCircle
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showInfo } from '@/utils/notifications'; // Import new notification utility
 
 const Relatorios = () => {
   const [periodo, setPeriodo] = useState("mes");
   const [unidade, setUnidade] = useState("todas");
   const [profissional, setProfissional] = useState("todos");
-  const { toast } = useToast();
 
   const metricas = {
     atendimentos: {
@@ -123,17 +122,11 @@ const Relatorios = () => {
   };
 
   const handleGerarRelatorio = (tipo: string, formato: string) => {
-    toast({
-      title: "Gerando relatório...",
-      description: `Seu relatório em ${formato} será baixado em instantes.`
-    });
+    showInfo("Gerando relatório...", `Seu relatório em ${formato} será baixado em instantes.`);
     
     // Simular download
     setTimeout(() => {
-      toast({
-        title: "Download concluído!",
-        description: `Relatório ${tipo} baixado com sucesso.`
-      });
+      showSuccess("Download concluído!", `Relatório ${tipo} baixado com sucesso.`);
     }, 2000);
   };
 

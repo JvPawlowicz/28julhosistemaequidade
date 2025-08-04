@@ -23,12 +23,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showError } from '@/utils/notifications'; // Import new notification utility
 import { usePermissions } from "@/contexts/usePermissions";
 
 const Settings = () => {
   const { hasPermission, getUserRole } = usePermissions();
-  const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogType, setDialogType] = useState("");
 
@@ -144,10 +143,7 @@ const Settings = () => {
   };
 
   const handleSave = () => {
-    toast({
-      title: "Configurações salvas",
-      description: "As alterações foram aplicadas com sucesso."
-    });
+    showSuccess("Configurações salvas", "As alterações foram aplicadas com sucesso.");
     setIsDialogOpen(false);
   };
 
