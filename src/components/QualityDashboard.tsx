@@ -3,10 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showError } from "@/utils/notifications";
 import { supabase } from "@/integrations/supabase/client";
-import { useMultiTenant } from "@/contexts/useMultiTenant"; // Corrected import path
-import { usePermissions } from "@/contexts/usePermissions"; // Corrected import path
+import { useMultiTenant } from "@/contexts/useMultiTenant";
+import { usePermissions } from "@/contexts/usePermissions";
 import { 
   TrendingUp, 
   TrendingDown,
@@ -28,18 +28,16 @@ interface QualityReport {
 }
 
 export const QualityDashboard = () => {
-  const { toast } = useToast();
   const { currentUnit } = useMultiTenant();
   const { hasPermission } = usePermissions();
   const [qualityData, setQualityData] = useState<QualityReport[]>([]);
   const [loading, setLoading] = useState(false);
-  const [period, setPeriod] = useState('30'); // dias
+  const [period, setPeriod] = useState('30');
   const [specialty, setSpecialty] = useState('all');
 
   const fetchQualityData = async () => {
     setLoading(true);
     try {
-      // Mock quality data - will be replaced when types are updated
       const mockData: QualityReport[] = [
         {
           patient_name: 'João Silva',
@@ -68,10 +66,7 @@ export const QualityDashboard = () => {
       ];
       setQualityData(mockData);
     } catch (error) {
-      toast({
-        title: "Erro ao carregar métricas de qualidade",
-        variant: "destructive"
-      });
+      showError("Erro ao carregar métricas de qualidade");
     }
     setLoading(false);
   };
@@ -80,7 +75,7 @@ export const QualityDashboard = () => {
     if (hasPermission('relatorios', 'read')) {
       fetchQualityData();
     }
-  }, [period, currentUnit]);
+  }, [period, currentUnit, hasPermission]);
 
   const filteredData = qualityData.filter(item => 
     specialty === 'all' || item.specialty.toLowerCase() === specialty
@@ -125,7 +120,6 @@ export const QualityDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header e Filtros */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-primary">Dashboard de Qualidade</h2>
@@ -166,7 +160,6 @@ export const QualityDashboard = () => {
         </div>
       </div>
 
-      {/* Cards de Estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -237,7 +230,6 @@ export const QualityDashboard = () => {
         </Card>
       </div>
 
-      {/* Alertas de Performance */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="border-success">
           <CardHeader className="pb-3">
@@ -270,7 +262,6 @@ export const QualityDashboard = () => {
         </Card>
       </div>
 
-      {/* Lista Detalhada */}
       <Card>
         <CardHeader>
           <CardTitle>Desempenho por Paciente</CardTitle>

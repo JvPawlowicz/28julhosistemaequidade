@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useToast } from "@/hooks/use-toast";
+import { showSuccess, showError } from "@/utils/notifications";
 import { supabase } from "@/integrations/supabase/client";
-import { usePermissions } from "@/contexts/usePermissions"; // Corrected import path
+import { usePermissions } from "@/contexts/usePermissions";
 import { 
   Shield, 
   Download, 
@@ -32,7 +32,6 @@ interface SystemBackup {
 }
 
 export const BackupManager = () => {
-  const { toast } = useToast();
   const { isAdmin } = usePermissions();
   const [backups, setBackups] = useState<SystemBackup[]>([]);
   const [loading, setLoading] = useState(false);
@@ -42,7 +41,6 @@ export const BackupManager = () => {
   const fetchBackups = async () => {
     setLoading(true);
     try {
-      // Mock data - will be replaced when types are updated
       const mockBackups: SystemBackup[] = [
         {
           id: '1',
@@ -56,10 +54,7 @@ export const BackupManager = () => {
       ];
       setBackups(mockBackups);
     } catch (error) {
-      toast({
-        title: "Erro ao carregar backups",
-        variant: "destructive"
-      });
+      showError("Erro ao carregar backups");
     } finally {
       setLoading(false);
     }
@@ -68,7 +63,6 @@ export const BackupManager = () => {
   const createBackup = async (type: 'manual' | 'daily' = 'manual') => {
     setIsCreatingBackup(true);
     try {
-      // Mock backup creation - will be replaced when types are updated
       const newBackup: SystemBackup = {
         id: crypto.randomUUID(),
         backup_type: type,
@@ -80,17 +74,9 @@ export const BackupManager = () => {
       };
 
       setBackups(prev => [newBackup, ...prev]);
-
-      toast({
-        title: "Backup criado com sucesso",
-        description: "O backup foi criado e está sendo processado"
-      });
+      showSuccess("Backup criado com sucesso", "O backup foi criado e está sendo processado");
     } catch (error) {
-      toast({
-        title: "Erro ao criar backup",
-        description: "Ocorreu um erro ao criar o backup do sistema",
-        variant: "destructive"
-      });
+      showError("Erro ao criar backup", "Ocorreu um erro ao criar o backup do sistema");
     }
     setIsCreatingBackup(false);
   };
@@ -99,7 +85,7 @@ export const BackupManager = () => {
     if (isOpen && isAdmin()) {
       fetchBackups();
     }
-  }, [isOpen]);
+  }, [isOpen, isAdmin]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -171,7 +157,6 @@ export const BackupManager = () => {
           </DialogTitle>
         </DialogHeader>
 
-        {/* Alerta de segurança */}
         <Alert>
           <Shield className="h-4 w-4" />
           <AlertDescription>
@@ -179,7 +164,6 @@ export const BackupManager = () => {
           </AlertDescription>
         </Alert>
 
-        {/* Stats */}
         <div className="grid grid-cols-4 gap-4 mb-4">
           <Card>
             <CardContent className="p-3 text-center">
@@ -207,7 +191,6 @@ export const BackupManager = () => {
           </Card>
         </div>
 
-        {/* Status do último backup */}
         {stats.lastBackup && (
           <Card className="border-success">
             <CardContent className="p-4">
@@ -227,7 +210,6 @@ export const BackupManager = () => {
           </Card>
         )}
 
-        {/* Ações */}
         <div className="flex gap-3 mb-4">
           <Button 
             onClick={() => createBackup('manual')} 
@@ -248,7 +230,6 @@ export const BackupManager = () => {
           </Button>
         </div>
 
-        {/* Lista de Backups */}
         <div className="space-y-3 max-h-96 overflow-y-auto">
           {loading ? (
             <div className="text-center py-8 text-muted-foreground">
@@ -312,10 +293,7 @@ export const BackupManager = () => {
                         size="sm"
                         className="gap-1"
                         onClick={() => {
-                          toast({
-                            title: "Download iniciado",
-                            description: "O arquivo de backup está sendo baixado"
-                          });
+                          showSuccess("Download iniciado", "O arquivo de backup está sendo baixado");
                         }}
                       >
                         <Download className="h-3 w-3" />
@@ -329,7 +307,6 @@ export const BackupManager = () => {
           )}
         </div>
 
-        {/* Configurações automáticas */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Configurações de Backup Automático</CardTitle>

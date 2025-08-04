@@ -8,21 +8,20 @@ import { ImportPatientModal } from "@/components/ImportPatientModal";
 import WaitingListModal from "@/components/WaitingListModal";
 import { useMultiTenant } from "@/contexts/useMultiTenant";
 import { usePermissions } from "@/contexts/usePermissions";
-import { showSuccess, showError } from '@/utils/notifications'; // Import new notification utility
+import { showSuccess, showError } from '@/utils/notifications';
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Loading } from "@/components/ui/loading";
 import { EmptyState } from "@/components/EmptyState";
 
-// Import new modular components
 import { PatientStatsCards } from "@/components/patients/PatientStatsCards";
 import { PatientSearchAndFilter } from "@/components/patients/PatientSearchAndFilter";
 import { PatientListItem } from "@/components/patients/PatientListItem";
 import { NewPatientDialog } from "@/components/patients/NewPatientDialog";
 
 type Patient = Tables<'patients'> & {
-  guardians?: Pick<Tables<'guardians'>, 'full_name' | 'email' | 'phone'> | null; // Pick specific columns
-  units?: Pick<Tables<'units'>, 'name'> | null; // Pick specific columns
+  guardians?: Pick<Tables<'guardians'>, 'full_name' | 'email' | 'phone'> | null;
+  units?: Pick<Tables<'units'>, 'name'> | null;
 };
 
 const Pacientes = () => {
@@ -31,7 +30,7 @@ const Pacientes = () => {
   const [filterStatus, setFilterStatus] = useState("todos");
   const [isNewPatientDialogOpen, setIsNewPatientDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { currentUnit, isAdmin, availableUnits } = useMultiTenant(); // Destructure availableUnits
+  const { currentUnit, isAdmin, availableUnits } = useMultiTenant();
   const { hasPermission } = usePermissions();
 
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -39,6 +38,8 @@ const Pacientes = () => {
     full_name: "",
     birth_date: "",
     primary_guardian_name: "",
+    guardian_cpf: "",
+    guardian_birth_date: "",
     relationship: "",
     phone: "",
     email: "",
@@ -98,19 +99,18 @@ const Pacientes = () => {
   };
 
   const handleCreatePatient = async () => {
-    if (!newPatientData.full_name || !newPatientData.birth_date || !newPatientData.primary_guardian_name || !newPatientData.phone || !newPatientData.unit_id || !newPatientData.status) {
+    if (!newPatientData.full_name || !newPatientData.birth_date || !newPatientData.primary_guardian_name || !newPatientData.phone || !newPatientData.unit_id || !newPatientData.status || !newPatientData.guardian_cpf || !newPatientData.guardian_birth_date) {
       showError("Campos obrigatórios", "Preencha todos os campos obrigatórios.");
       return;
     }
 
     try {
-      // First, create the guardian
       const { data: guardianData, error: guardianError } = await supabase
         .from('guardians')
         .insert({
           full_name: newPatientData.primary_guardian_name,
-          birth_date: '2000-01-01', // Placeholder, consider adding to form
-          cpf: '00000000000', // Placeholder, consider adding to form
+          birth_date: newPatientData.guardian_birth_date,
+          cpf: newPatientData.guardian_cpf.replace(/\D/g, ''),
           phone: newPatientData.phone,
           email: newPatientData.email,
           relationship: newPatientData.relationship,
@@ -120,7 +120,6 @@ const Pacientes = () => {
 
       if (guardianError) throw guardianError;
 
-      // Then, create the patient linking to the new guardian
       const { data: patientData, error: patientError } = await supabase
         .from('patients')
         .insert({
@@ -143,7 +142,7 @@ const Pacientes = () => {
 
       setPatients(prev => [...prev, patientData]);
       setNewPatientData({
-        full_name: "", birth_date: "", primary_guardian_name: "", relationship: "",
+        full_name: "", birth_date: "", primary_guardian_name: "", guardian_cpf: "", guardian_birth_date: "", relationship: "",
         phone: "", email: "", diagnosis: "", unit_id: "", status: ""
       });
       setIsNewPatientDialogOpen(false);
@@ -185,7 +184,6 @@ const Pacientes = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-primary">Gestão de Pacientes</h1>
@@ -204,24 +202,18 @@ const Pacientes = () => {
         </div>
       </div>
 
-      {/* New Patient Dialog */}
       <NewPatientDialog
         isOpen={isNewPatientDialogOpen}
         onOpenChange={setIsNewPatientDialogOpen}
         newPatient={newPatientData}
         setNewPatient={setNewPatientData}
         onCreatePatient={handleCreatePatient}
-        availableUnits={availableUnits} // Pass availableUnits
-        isAdmin={isAdmin()} // Pass isAdmin status
+        availableUnits={availableUnits}
+        isAdmin={isAdmin()}
       />
 
-      {/* Indicador de dados filtrados */}
       <UnitDataIndicator />
-
-      {/* Stats Cards */}
       <PatientStatsCards stats={stats} isAdmin={isAdmin()} />
-
-      {/* Search and Filter */}
       <PatientSearchAndFilter
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -229,7 +221,6 @@ const Pacientes = () => {
         setFilterStatus={setFilterStatus}
       />
 
-      {/* Patients List */}
       <Card>
         <CardHeader>
           <CardTitle>Lista de Pacientes ({filteredPatients.length})</CardTitle>

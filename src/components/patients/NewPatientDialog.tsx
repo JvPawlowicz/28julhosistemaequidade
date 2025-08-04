@@ -5,18 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMultiTenant } from "@/contexts/useMultiTenant";
 import { Tables } from "@/integrations/supabase/types";
-import { showSuccess, showError } from '@/utils/notifications'; // Import new notification utility
+import { showSuccess, showError } from '@/utils/notifications';
 
 interface NewPatientData {
   full_name: string;
   birth_date: string;
   primary_guardian_name: string;
+  guardian_cpf: string;
+  guardian_birth_date: string;
   relationship: string;
   phone: string;
   email: string;
   diagnosis: string;
   unit_id: string;
-  status: string; // Changed to string as per DB schema
+  status: string;
 }
 
 interface NewPatientDialogProps {
@@ -25,8 +27,8 @@ interface NewPatientDialogProps {
   newPatient: NewPatientData;
   setNewPatient: React.Dispatch<React.SetStateAction<NewPatientData>>;
   onCreatePatient: () => void;
-  availableUnits: Tables<'units'>[]; // Added availableUnits prop
-  isAdmin: boolean; // Added isAdmin prop
+  availableUnits: Tables<'units'>[];
+  isAdmin: boolean;
 }
 
 export const NewPatientDialog: React.FC<NewPatientDialogProps> = ({
@@ -35,8 +37,8 @@ export const NewPatientDialog: React.FC<NewPatientDialogProps> = ({
   newPatient,
   setNewPatient,
   onCreatePatient,
-  availableUnits, // Destructure new prop
-  isAdmin, // Destructure new prop
+  availableUnits,
+  isAdmin,
 }) => {
   const { currentUnit } = useMultiTenant();
 
@@ -73,6 +75,25 @@ export const NewPatientDialog: React.FC<NewPatientDialogProps> = ({
                 placeholder="Nome completo do responsável" 
                 value={newPatient.primary_guardian_name}
                 onChange={(e) => setNewPatient(prev => ({ ...prev, primary_guardian_name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">CPF do Responsável *</label>
+              <Input 
+                placeholder="000.000.000-00" 
+                value={newPatient.guardian_cpf}
+                onChange={(e) => setNewPatient(prev => ({ ...prev, guardian_cpf: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium">Data de Nasc. do Responsável *</label>
+              <Input 
+                type="date" 
+                value={newPatient.guardian_birth_date}
+                onChange={(e) => setNewPatient(prev => ({ ...prev, guardian_birth_date: e.target.value }))}
               />
             </div>
             <div>

@@ -44,68 +44,65 @@ const Layout = () => {
   
   const navigationItems = {
     admin: [
-      { icon: Home, label: "Dashboard Admin", path: "/app/dashboard/admin" },
-      { icon: BarChart3, label: "Dashboard Qualidade", path: "/app/dashboard/quality" }, // NEW
+      { icon: Home, label: "Dashboard", path: "/app" },
+      { icon: BarChart3, label: "Dashboard Qualidade", path: "/app/dashboard/quality" },
       { icon: Calendar, label: "Agenda Global", path: "/app/agenda" },
       { icon: Users, label: "Pacientes", path: "/app/pacientes" },
       { icon: FileText, label: "Evoluções", path: "/app/evolucoes" },
-      { icon: ClipboardCheck, label: "Protocolos ABA", path: "/app/protocolos" }, // Existing
-      { icon: Brain, label: "Protocolos Avaliação", path: "/app/protocolos-avaliacao" }, // NEW
+      { icon: ClipboardCheck, label: "Protocolos ABA", path: "/app/protocolos" },
+      { icon: Brain, label: "Protocolos Avaliação", path: "/app/protocolos-avaliacao" },
       { icon: Activity, label: "Coleta de Dados", path: "/app/coleta-dados" },
-      { icon: Heart, label: "Gestão Multidisciplinar", path: "/app/gestao-multidisciplinar" }, // NEW
-      { icon: Book, label: "Banco de Recursos", path: "/app/banco-recursos" }, // NEW
+      { icon: Heart, label: "Gestão Multidisciplinar", path: "/app/gestao-multidisciplinar" },
+      { icon: Book, label: "Banco de Recursos", path: "/app/banco-recursos" },
       { icon: UserCheck, label: "Usuários", path: "/app/usuarios" },
       { icon: BarChart3, label: "Relatórios", path: "/app/relatorios" },
-      { icon: BarChart3, label: "Relatórios Expandidos", path: "/app/relatorios-expandidos" }, // NEW
+      { icon: BarChart3, label: "Relatórios Expandidos", path: "/app/relatorios-expandidos" },
       { icon: Settings, label: "Configurações", path: "/app/configuracoes" },
-      { separator: true, label: "Outras Visões" },
-      { icon: Eye, label: "Visão Terapeuta", path: "/app/dashboard/terapeuta" },
-      { icon: Eye, label: "Visão Recepção", path: "/app/dashboard/recepcao" },
     ],
     coordenador: [
-      { icon: Home, label: "Dashboard Coordenador", path: "/app/dashboard/admin" }, // Coordenador uses Admin dashboard for now
-      { icon: BarChart3, label: "Dashboard Qualidade", path: "/app/dashboard/quality" }, // NEW
+      { icon: Home, label: "Dashboard", path: "/app" },
+      { icon: BarChart3, label: "Dashboard Qualidade", path: "/app/dashboard/quality" },
       { icon: Calendar, label: "Agenda Unidade", path: "/app/agenda" },
       { icon: Users, label: "Pacientes", path: "/app/pacientes" },
       { icon: FileText, label: "Prontuários", path: "/app/prontuarios" },
       { icon: FileText, label: "Evoluções", path: "/app/evolucoes" },
-      { icon: ClipboardCheck, label: "Protocolos ABA", path: "/app/protocolos" }, // Existing
-      { icon: Brain, label: "Protocolos Avaliação", path: "/app/protocolos-avaliacao" }, // NEW
-      { icon: Heart, label: "Gestão Multidisciplinar", path: "/app/gestao-multidisciplinar" }, // NEW
-      { icon: Book, label: "Banco de Recursos", path: "/app/banco-recursos" }, // NEW
-      { icon: MessageSquare, label: "Supervisão", path: "/app/evolucoes" }, // Evoluções page handles supervision tab
+      { icon: ClipboardCheck, label: "Protocolos ABA", path: "/app/protocolos" },
+      { icon: Brain, label: "Protocolos Avaliação", path: "/app/protocolos-avaliacao" },
+      { icon: Heart, label: "Gestão Multidisciplinar", path: "/app/gestao-multidisciplinar" },
+      { icon: Book, label: "Banco de Recursos", path: "/app/banco-recursos" },
+      { icon: MessageSquare, label: "Supervisão", path: "/app/evolucoes" },
       { icon: BarChart3, label: "Relatórios", path: "/app/relatorios" },
-      { icon: BarChart3, label: "Relatórios Expandidos", path: "/app/relatorios-expandidos" }, // NEW
+      { icon: BarChart3, label: "Relatórios Expandidos", path: "/app/relatorios-expandidos" },
     ],
     terapeuta: [
-      { icon: Home, label: "Dashboard Terapeuta", path: "/app/dashboard/terapeuta" },
+      { icon: Home, label: "Dashboard", path: "/app" },
       { icon: Calendar, label: "Minha Agenda", path: "/app/agenda" },
       { icon: Users, label: "Meus Pacientes", path: "/app/pacientes" },
       { icon: FileText, label: "Prontuários", path: "/app/prontuarios" },
       { icon: FileText, label: "Evoluções", path: "/app/evolucoes" },
-      { icon: ClipboardCheck, label: "Protocolos ABA", path: "/app/protocolos" }, // Existing
-      { icon: Brain, label: "Protocolos Avaliação", path: "/app/protocolos-avaliacao" }, // NEW
+      { icon: ClipboardCheck, label: "Protocolos ABA", path: "/app/protocolos" },
+      { icon: Brain, label: "Protocolos Avaliação", path: "/app/protocolos-avaliacao" },
       { icon: Activity, label: "Coleta de Dados", path: "/app/coleta-dados" },
-      { icon: Book, label: "Banco de Recursos", path: "/app/banco-recursos" }, // NEW
+      { icon: Book, label: "Banco de Recursos", path: "/app/banco-recursos" },
     ],
     estagiario: [
-      { icon: Home, label: "Dashboard Estagiário", path: "/app/dashboard/terapeuta" }, // Estagiário uses Terapeuta dashboard
+      { icon: Home, label: "Dashboard", path: "/app" },
       { icon: Calendar, label: "Minha Agenda", path: "/app/agenda" },
       { icon: Users, label: "Meus Pacientes", path: "/app/pacientes" },
       { icon: FileText, label: "Prontuários", path: "/app/prontuarios" },
       { icon: FileText, label: "Evoluções", path: "/app/evolucoes" },
-      { icon: ClipboardCheck, label: "Protocolos ABA", path: "/app/protocolos" }, // Existing
-      { icon: Brain, label: "Protocolos Avaliação", path: "/app/protocolos-avaliacao" }, // NEW
+      { icon: ClipboardCheck, label: "Protocolos ABA", path: "/app/protocolos" },
+      { icon: Brain, label: "Protocolos Avaliação", path: "/app/protocolos-avaliacao" },
       { icon: Activity, label: "Coleta de Dados", path: "/app/coleta-dados" },
-      { icon: Book, label: "Banco de Recursos", path: "/app/banco-recursos" }, // NEW
+      { icon: Book, label: "Banco de Recursos", path: "/app/banco-recursos" },
     ],
     recepcao: [
-      { icon: Home, label: "Dashboard Recepção", path: "/app/dashboard/recepcao" },
+      { icon: Home, label: "Dashboard", path: "/app" },
       { icon: Calendar, label: "Agenda", path: "/app/agenda" },
       { icon: Users, label: "Pacientes", path: "/app/pacientes" },
     ],
     responsavel: [
-      { icon: Home, label: "Dashboard Família", path: "/app/dashboard/responsavel" },
+      { icon: Home, label: "Dashboard", path: "/app" },
       { icon: Calendar, label: "Agendamentos", path: "/app/agenda" },
       { icon: FileText, label: "Documentos", path: "/app/documentos" },
       { icon: MessageSquare, label: "Contato", path: "/app/contato" },
@@ -154,7 +151,6 @@ const Layout = () => {
           </div>
         </div>
         
-        {/* Mostrar unidade atual para admins e coordenadores */}
         {(isAdmin() || isCoordinator()) && currentUnit && (
           <div className="mt-3 p-2 bg-primary-light rounded-lg">
             <p className="text-xs text-primary font-medium">Unidade Atual:</p>
@@ -207,12 +203,10 @@ const Layout = () => {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Desktop Sidebar */}
       <div className="hidden lg:flex lg:w-64 lg:flex-col bg-card border-r border-medical-border">
         <NavContent />
       </div>
 
-      {/* Mobile Sidebar */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetTrigger asChild>
           <Button 
@@ -228,15 +222,10 @@ const Layout = () => {
         </SheetContent>
       </Sheet>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        {/* Top Bar */}
         <header className="h-16 bg-card border-b border-medical-border flex items-center justify-between px-6">
           <div className="flex items-center gap-4">
-            {/* Unit Selector - mais importante para admin e coordenador */}
             {(isAdmin() || isCoordinator()) && <UnitSelector />}
-            
-            {/* Indicador de dados filtrados */}
             <UnitDataIndicator />
           </div>
           
@@ -252,7 +241,6 @@ const Layout = () => {
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="flex-1 p-6 bg-medical-gray">
           <Outlet />
         </main>
