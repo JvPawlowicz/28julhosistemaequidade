@@ -1,5 +1,7 @@
 import * as React from 'react';
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { useAuth } from "./useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface Unit {
   id: string;
@@ -96,6 +98,35 @@ export const MultiTenantProvider = ({ children }: MultiTenantProviderProps) => {
   const [currentUnit, setCurrentUnit] = useState<Unit | null>(null);
   const [availableUnits] = useState<Unit[]>(mockUnits);
   const [currentUser, setCurrentUser] = useState<Professional | null>(null);
+  const { user } = useAuth();
+
+  // Preencher currentUser real após login
+  useEffect(() => {
+    async function fetchUserProfile() {
+      if (user) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        if (!error && data) {
+          setCurrentUser({
+            id: user.id,
+            name: data.full_name || user.email,
+            email: user.email,
+            role: data.status || 'terapeuta', // fallback para status como role
+            specialty: data.council_type || '', // fallback para council_type como especialidade
+            units: data.unit_id ? [data.unit_id] : [],
+            permissions: [], // não há campo permissions no schema
+            profile: {
+              requires_supervision: data.requires_supervision || false
+            },
+          });
+        }
+      }
+    }
+    fetchUserProfile();
+  }, [user]);
 
   const getUserUnits = React.useCallback((): Unit[] => {
     return availableUnits.filter(unit => 

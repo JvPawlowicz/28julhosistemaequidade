@@ -31,7 +31,7 @@ const parentSchema = z.object({
 });
 type ParentFormData = z.infer<typeof parentSchema>;
 
-const LoginPage = () => {
+const Login = () => {
   const navigate = useNavigate();
   const { type } = useParams();
   const { signIn, signUp, loading } = useAuthActions();
@@ -81,7 +81,7 @@ const LoginPage = () => {
         // if (!profileError && profileData?.role) {
         //   localStorage.setItem('userRole', profileData.role);
         // }
-        navigate('/');
+        navigate('/app');
       }
     }
   };
@@ -360,4 +360,6 @@ const LoginPage = () => {
   return null;
 };
 
-export default LoginPage;
+// Removido componente LoginPage legacy (mock). Apenas o componente Login real permanece.
+
+export default Login;

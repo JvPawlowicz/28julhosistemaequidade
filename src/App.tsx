@@ -2,13 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { MultiTenantProvider } from "@/contexts/MultiTenantContext";
 import { PermissionsProvider } from "@/contexts/PermissionsContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Landing from "./pages/Landing";
-import LoginPage from "./pages/Login";
+import Login from "./pages/Login";
 import Index from "./pages/Index";
 import Layout from "./components/Layout";
 import AdminDashboard from "./pages/dashboards/AdminDashboard";
@@ -26,77 +25,78 @@ import Evolucoes from "./pages/evolucoes/Evolucoes";
 import ABAProtocols from "./pages/protocolos/ABAProtocols";
 import RealtimeDataCollection from "./pages/coleta/RealtimeDataCollection";
 import NotFound from "./pages/NotFound";
+import BackendStatus from "./pages/BackendStatus";
+import { Routes, Route } from "react-router-dom";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <AuthProvider>
-          <MultiTenantProvider>
-            <PermissionsProvider>
-              <Toaster />
-              <Sonner />
-              <Routes>
-                {/* Public Routes */}
-                <Route path="/landing" element={<Landing />} />
-                <Route 
-                  path="/login" 
-                  element={
-                    <ProtectedRoute requireAuth={false}>
-                      <LoginPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/login/:type" 
-                  element={
-                    <ProtectedRoute requireAuth={false}>
-                      <LoginPage />
-                    </ProtectedRoute>
-                  } 
-                />
-                {/* Redirecionar root para landing se não autenticado */}
-                <Route 
-                  path="/" 
-                  element={
-                    <ProtectedRoute requireAuth={false}>
-                      <Landing />
-                    </ProtectedRoute>
-                  } 
-                />
-                {/* Protected Routes with Layout */}
-                <Route 
-                  path="/app" 
-                  element={
-                    <ProtectedRoute>
-                      <Layout />
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route index element={<Index />} />
-                  <Route path="dashboard/admin" element={<AdminDashboard />} />
-                  <Route path="dashboard/terapeuta" element={<TerapeutaDashboard />} />
-                  <Route path="dashboard/recepcao" element={<RecepcaoDashboard />} />
-                  <Route path="dashboard/responsavel" element={<ResponsavelDashboard />} />
-                  <Route path="agenda" element={<Agenda />} />
-                  <Route path="usuarios" element={<Usuarios />} />
-                  <Route path="pacientes" element={<Pacientes />} />
-                  <Route path="pacientes/:id" element={<PatientProfile />} />
-                  <Route path="prontuarios" element={<Prontuarios />} />
-                  <Route path="evolucoes" element={<Evolucoes />} />
-                  <Route path="protocolos" element={<ABAProtocols />} />
-                  <Route path="coleta-dados" element={<RealtimeDataCollection />} />
-                  <Route path="relatorios" element={<Relatorios />} />
-                  <Route path="configuracoes" element={<Settings />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </PermissionsProvider>
-          </MultiTenantProvider>
-        </AuthProvider>
-      </BrowserRouter>
+      <AuthProvider>
+        <MultiTenantProvider>
+          <PermissionsProvider>
+            <Toaster />
+            <Sonner />
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/backend-status" element={<BackendStatus />} />
+              <Route path="/landing" element={<Landing />} />
+              <Route 
+                path="/login" 
+                element={
+                  <ProtectedRoute requireAuth={false}>
+                    <Login />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/login/:type" 
+                element={
+                  <ProtectedRoute requireAuth={false}>
+                    <Login />
+                  </ProtectedRoute>
+                } 
+              />
+              {/* Redirecionar root para landing se não autenticado */}
+              <Route 
+                path="/" 
+                element={
+                  <ProtectedRoute requireAuth={false}>
+                    <Landing />
+                  </ProtectedRoute>
+                } 
+              />
+              {/* Protected Routes with Layout */}
+              <Route 
+                path="/app" 
+                element={
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route index element={<Index />} />
+                <Route path="dashboard/admin" element={<AdminDashboard />} />
+                <Route path="dashboard/terapeuta" element={<TerapeutaDashboard />} />
+                <Route path="dashboard/recepcao" element={<RecepcaoDashboard />} />
+                <Route path="dashboard/responsavel" element={<ResponsavelDashboard />} />
+                <Route path="agenda" element={<Agenda />} />
+                <Route path="usuarios" element={<Usuarios />} />
+                <Route path="pacientes" element={<Pacientes />} />
+                <Route path="pacientes/:id" element={<PatientProfile />} />
+                <Route path="prontuarios" element={<Prontuarios />} />
+                <Route path="evolucoes" element={<Evolucoes />} />
+                <Route path="protocolos" element={<ABAProtocols />} />
+                <Route path="coleta-dados" element={<RealtimeDataCollection />} />
+                <Route path="relatorios" element={<Relatorios />} />
+                <Route path="configuracoes" element={<Settings />} />
+              </Route>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </PermissionsProvider>
+        </MultiTenantProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

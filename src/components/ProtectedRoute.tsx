@@ -29,7 +29,12 @@ export const ProtectedRoute = ({ children, requireAuth = true }: ProtectedRouteP
 
   // If user is logged in and trying to access login page, redirect to home
   if (!requireAuth && user && location.pathname === '/login') {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/app" replace />;
+  }
+
+  // Redireciona usuário autenticado da landing '/' para '/app'
+  if (!requireAuth && user && location.pathname === '/') {
+    return <Navigate to="/app" replace />;
   }
 
   return <>{children}</>;

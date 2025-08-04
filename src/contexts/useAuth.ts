@@ -19,7 +19,7 @@ export const useAuthActions = () => {
   const signInWithNavigate = async (email: string, password: string) => {
     const result = await signIn(email, password);
     if (!result.error) {
-      setTimeout(() => navigate('/'), 1000);
+      setTimeout(() => navigate('/app'), 1000);
     }
     return result;
   };
