@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables, Enums } from "@/integrations/supabase/types";
 import { Loading } from "@/components/ui/loading";
-import { format, startOfWeek, addDays } from 'date-fns';
+import { format, startOfWeek, addDays, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 // Import new modular components
@@ -17,6 +17,7 @@ import { AgendaDayView } from "@/components/agenda/AgendaDayView";
 import { AgendaWeekView } from "@/components/agenda/AgendaWeekView";
 import { AgendaLegend } from "@/components/agenda/AgendaLegend";
 import { NewAppointmentDialog } from "@/components/agenda/NewAppointmentDialog";
+import { Shield } from "lucide-react"; // Import Shield for restricted access
 
 type Appointment = Tables<'appointments'> & {
   patients?: Pick<Tables<'patients'>, 'full_name' | 'phone'> | null;
@@ -45,6 +46,20 @@ const Agenda = () => {
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
     try {
+      let startDate: Date;
+      let endDate: Date;
+
+      if (view === 'day') {
+        startDate = currentDate;
+        endDate = currentDate;
+      } else if (view === 'week') {
+        startDate = startOfWeek(currentDate, { weekStartsOn: 1 });
+        endDate = addDays(startDate, 4); // Monday to Friday
+      } else { // month view
+        startDate = startOfMonth(currentDate);
+        endDate = endOfMonth(currentDate);
+      }
+
       let query = supabase
         .from('appointments')
         .select(`
@@ -53,6 +68,8 @@ const Agenda = () => {
           profiles(full_name),
           rooms(name)
         `)
+        .gte('appointment_date', format(startDate, 'yyyy-MM-dd'))
+        .lte('appointment_date', format(endDate, 'yyyy-MM-dd'))
         .order('start_time', { ascending: true });
 
       if (!isAdmin() && currentUnit) {
@@ -92,7 +109,7 @@ const Agenda = () => {
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, currentUnit, getUserRole, toast, filterStatus, filterProfessional, filterRoom, searchTerm]);
+  }, [isAdmin, currentUnit, getUserRole, toast, filterStatus, filterProfessional, filterRoom, searchTerm, currentDate, view]); // Added currentDate and view to dependencies
 
   const fetchTherapistsRoomsAndPatients = useCallback(async () => {
     try {

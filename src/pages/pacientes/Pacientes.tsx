@@ -6,11 +6,11 @@ import { Plus, Shield, Users } from "lucide-react";
 import UnitDataIndicator from "@/components/UnitDataIndicator";
 import { ImportPatientModal } from "@/components/ImportPatientModal";
 import WaitingListModal from "@/components/WaitingListModal";
-import { useMultiTenant } from "@/contexts/useMultiTenant"; // Corrected import path
-import { usePermissions } from "@/contexts/usePermissions"; // Corrected import path
+import { useMultiTenant } from "@/contexts/useMultiTenant";
+import { usePermissions } from "@/contexts/usePermissions";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Tables, Enums } from "@/integrations/supabase/types"; // Import Enums
+import { Tables } from "@/integrations/supabase/types";
 import { Loading } from "@/components/ui/loading";
 import { EmptyState } from "@/components/EmptyState";
 
@@ -32,7 +32,7 @@ const Pacientes = () => {
   const [isNewPatientDialogOpen, setIsNewPatientDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { currentUnit, isAdmin } = useMultiTenant();
+  const { currentUnit, isAdmin, availableUnits } = useMultiTenant(); // Destructure availableUnits
   const { hasPermission } = usePermissions();
 
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -138,7 +138,7 @@ const Pacientes = () => {
           phone: newPatientData.phone,
           diagnosis: newPatientData.diagnosis,
           unit_id: newPatientData.unit_id,
-          status: newPatientData.status as Enums<'user_status'>, // Cast to correct enum type
+          status: newPatientData.status, // Removed Enums cast
           primary_guardian_id: guardianData.id,
         })
         .select(`
@@ -227,6 +227,8 @@ const Pacientes = () => {
         newPatient={newPatientData}
         setNewPatient={setNewPatientData}
         onCreatePatient={handleCreatePatient}
+        availableUnits={availableUnits} // Pass availableUnits
+        isAdmin={isAdmin()} // Pass isAdmin status
       />
 
       {/* Indicador de dados filtrados */}

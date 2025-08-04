@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMultiTenant } from "@/contexts/useMultiTenant";
+import { Tables } from "@/integrations/supabase/types";
 
 interface NewPatientData {
   full_name: string;
@@ -14,7 +15,7 @@ interface NewPatientData {
   email: string;
   diagnosis: string;
   unit_id: string;
-  status: string;
+  status: string; // Changed to string as per DB schema
 }
 
 interface NewPatientDialogProps {
@@ -23,6 +24,8 @@ interface NewPatientDialogProps {
   newPatient: NewPatientData;
   setNewPatient: React.Dispatch<React.SetStateAction<NewPatientData>>;
   onCreatePatient: () => void;
+  availableUnits: Tables<'units'>[]; // Added availableUnits prop
+  isAdmin: boolean; // Added isAdmin prop
 }
 
 export const NewPatientDialog: React.FC<NewPatientDialogProps> = ({
@@ -31,6 +34,8 @@ export const NewPatientDialog: React.FC<NewPatientDialogProps> = ({
   newPatient,
   setNewPatient,
   onCreatePatient,
+  availableUnits, // Destructure new prop
+  isAdmin, // Destructure new prop
 }) => {
   const { currentUnit } = useMultiTenant();
 
@@ -122,8 +127,13 @@ export const NewPatientDialog: React.FC<NewPatientDialogProps> = ({
                   <SelectValue placeholder="Selecionar unidade" />
                 </SelectTrigger>
                 <SelectContent>
-                  {currentUnit && <SelectItem value={currentUnit.id}>{currentUnit.name}</SelectItem>}
-                  {/* Add other available units if admin */}
+                  {isAdmin ? (
+                    availableUnits.map(unit => (
+                      <SelectItem key={unit.id} value={unit.id}>{unit.name}</SelectItem>
+                    ))
+                  ) : (
+                    currentUnit && <SelectItem value={currentUnit.id}>{currentUnit.name}</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>

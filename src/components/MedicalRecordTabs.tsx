@@ -40,7 +40,7 @@ interface MedicalRecordTabsProps {
 }
 
 type PatientDocument = Tables<'patient_documents'>;
-type Evaluation = Tables<'evaluations'>;
+type Evaluation = Tables<'evaluations'> & { status: string | null }; // Added status to Evaluation type
 type TherapyGoal = Tables<'therapy_goals'>;
 
 const MedicalRecordTabs = ({ patientId }: MedicalRecordTabsProps) => {
@@ -287,7 +287,11 @@ const MedicalRecordTabs = ({ patientId }: MedicalRecordTabsProps) => {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    {/* Removed status badge as 'status' is not in evaluations table */}
+                    {evaluation.status && ( // Conditionally render status badge if status exists
+                      <Badge className={getStatusColor(evaluation.status)}>
+                        {evaluation.status}
+                      </Badge>
+                    )}
                     <span className="text-sm text-muted-foreground">
                       {new Date(evaluation.evaluation_date).toLocaleDateString('pt-BR')}
                     </span>
