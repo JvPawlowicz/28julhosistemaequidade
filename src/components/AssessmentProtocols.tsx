@@ -19,9 +19,9 @@ import {
   Save,
   CheckCircle
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 import { usePermissions } from "@/contexts/usePermissions";
 import { ScaleCalculator } from "./ScaleCalculator";
+import { showSuccess } from "@/utils/notifications";
 
 interface AssessmentProtocolsProps {
   patientId: number;
@@ -41,7 +41,6 @@ interface Assessment {
 }
 
 export const AssessmentProtocols = ({ patientId, diagnosis, age }: AssessmentProtocolsProps) => {
-  const { toast } = useToast();
   const { hasPermission } = usePermissions();
   const [selectedProtocol, setSelectedProtocol] = useState<string>("");
   const [isNewAssessmentOpen, setIsNewAssessmentOpen] = useState(false);
@@ -120,10 +119,7 @@ export const AssessmentProtocols = ({ patientId, diagnosis, age }: AssessmentPro
   };
 
   const handleNewAssessment = () => {
-    toast({
-      title: "Avaliação registrada",
-      description: "Nova avaliação foi salva com sucesso."
-    });
+    showSuccess("Avaliação registrada", "Nova avaliação foi salva com sucesso.");
     setIsNewAssessmentOpen(false);
     setSelectedProtocol("");
   };

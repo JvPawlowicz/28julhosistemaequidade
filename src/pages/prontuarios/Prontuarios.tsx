@@ -23,18 +23,18 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
 import MedicalRecordTabs from "@/components/MedicalRecordTabs";
 import { supabase } from "@/integrations/supabase/client";
 import { usePermissions } from "@/contexts/usePermissions";
 import { useMultiTenant } from "@/contexts/useMultiTenant";
 import { Loading } from "@/components/ui/loading";
 import { EmptyState } from "@/components/EmptyState";
-import { Tables } from "@/integrations/supabase/types"; // Added Tables import
+import { Tables } from "@/integrations/supabase/types";
+import { showSuccess, showError } from "@/utils/notifications";
 
 type Patient = Tables<'patients'> & {
-  guardians?: Pick<Tables<'guardians'>, 'full_name'> | null; // Pick specific columns
-  units?: Pick<Tables<'units'>, 'name'> | null; // Pick specific columns
+  guardians?: Pick<Tables<'guardians'>, 'full_name'> | null;
+  units?: Pick<Tables<'units'>, 'name'> | null;
 };
 
 const Prontuarios = () => {
@@ -42,7 +42,6 @@ const Prontuarios = () => {
   const [selectedPaciente, setSelectedPaciente] = useState<Patient | null>(null);
   const [isEvolucaoOpen, setIsEvolucaoOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
   const { hasPermission, isAdmin } = usePermissions();
   const { currentUnit } = useMultiTenant();
 
@@ -70,14 +69,11 @@ const Prontuarios = () => {
       setPacientes(data || []);
     } catch (error) {
       console.error('Error fetching patients:', error);
-      toast({
-        title: "Erro ao carregar pacientes",
-        variant: "destructive"
-      });
+      showError("Erro ao carregar pacientes");
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, currentUnit, toast]);
+  }, [isAdmin, currentUnit]);
 
   useEffect(() => {
     if (hasPermission('prontuarios', 'view')) {
@@ -96,10 +92,7 @@ const Prontuarios = () => {
   };
 
   const handleNovaEvolucao = () => {
-    toast({
-      title: "Evolução registrada",
-      description: "Nova evolução clínica foi salva com sucesso."
-    });
+    showSuccess("Evolução registrada", "Nova evolução clínica foi salva com sucesso.");
     setIsEvolucaoOpen(false);
   };
 

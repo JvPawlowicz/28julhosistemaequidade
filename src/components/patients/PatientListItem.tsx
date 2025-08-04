@@ -2,11 +2,11 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, FileText, Phone, Mail, MapPin, AlertCircle } from "lucide-react";
-import { Tables } from "@/integrations/supabase/types"; // Import Enums is not needed here for patient status
+import { Tables } from "@/integrations/supabase/types";
 
 type Patient = Tables<'patients'> & {
-  guardians?: Pick<Tables<'guardians'>, 'full_name' | 'email' | 'phone'> | null; // Pick specific columns
-  units?: Pick<Tables<'units'>, 'name'> | null; // Pick specific columns
+  guardians?: Pick<Tables<'guardians'>, 'full_name' | 'email' | 'phone'> | null;
+  units?: Pick<Tables<'units'>, 'name'> | null;
 };
 
 interface PatientListItemProps {
@@ -15,7 +15,7 @@ interface PatientListItemProps {
 }
 
 export const PatientListItem: React.FC<PatientListItemProps> = ({ patient, onViewProfile }) => {
-  const getStatusColor = (status: string) => { // Changed type to string
+  const getStatusColor = (status: string | null) => {
     switch (status) {
       case 'ativo': return 'bg-success text-success-foreground';
       case 'triagem': return 'bg-warning text-warning-foreground';
@@ -24,16 +24,6 @@ export const PatientListItem: React.FC<PatientListItemProps> = ({ patient, onVie
       default: return 'bg-muted text-muted-foreground';
     }
   };
-
-  const getFrequenciaColor = (frequencia: number) => {
-    if (frequencia >= 90) return 'text-success';
-    if (frequencia >= 70) return 'text-warning';
-    return 'text-destructive';
-  };
-
-  // Mock data for fields not directly from DB for now
-  const mockFrequencia = 95;
-  const mockFaltas = 1; // Example, would be fetched from DB
 
   return (
     <div className="p-4 border border-medical-border rounded-lg">
@@ -52,7 +42,7 @@ export const PatientListItem: React.FC<PatientListItemProps> = ({ patient, onVie
                 <Phone className="h-3 w-3" />
                 {patient.guardians?.full_name || 'N/A'}
               </span>
-              <Badge className={getStatusColor(patient.status || 'default')}>
+              <Badge className={getStatusColor(patient.status)}>
                 {patient.status}
               </Badge>
             </div>
@@ -60,8 +50,8 @@ export const PatientListItem: React.FC<PatientListItemProps> = ({ patient, onVie
         </div>
         
         <div className="text-right">
-          <div className={`text-2xl font-bold ${getFrequenciaColor(mockFrequencia)}`}>
-            {mockFrequencia}%
+          <div className="text-2xl font-bold">
+            N/A
           </div>
           <p className="text-xs text-muted-foreground">Frequência</p>
         </div>
@@ -93,8 +83,7 @@ export const PatientListItem: React.FC<PatientListItemProps> = ({ patient, onVie
         <div>
           <p className="text-muted-foreground">Próxima Consulta</p>
           <p className="font-medium">
-            {/* This would need to be fetched from appointments */}
-            Não agendada
+            N/A
           </p>
         </div>
       </div>
@@ -102,21 +91,11 @@ export const PatientListItem: React.FC<PatientListItemProps> = ({ patient, onVie
       <div className="mb-4">
         <p className="text-sm text-muted-foreground mb-2">Equipe Terapêutica:</p>
         <div className="flex gap-2 flex-wrap">
-          {/* This would need to be fetched from a patient_therapists or similar table */}
           <Badge variant="outline" className="text-xs">
             Não atribuído
           </Badge>
         </div>
       </div>
-
-      {mockFaltas > 0 && (
-        <div className="mb-4 p-2 bg-warning/10 border border-warning/20 rounded text-sm">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4 text-warning" />
-            <span className="font-medium">{mockFaltas} falta(s) no mês</span>
-          </div>
-        </div>
-      )}
 
       <div className="flex gap-2 flex-wrap">
         <Button 

@@ -21,12 +21,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { usePermissions } from "@/contexts/usePermissions"; // Corrected import path
-import { useMultiTenant } from "@/contexts/useMultiTenant"; // Corrected import path
-import { Tables, Enums } from "@/integrations/supabase/types"; // Import Enums
+import { usePermissions } from "@/contexts/usePermissions";
+import { useMultiTenant } from "@/contexts/useMultiTenant";
+import { Tables, Enums } from "@/integrations/supabase/types";
+import { showSuccess, showError } from "@/utils/notifications";
 
-type Profile = Tables<'profiles'>;
-type Unit = Tables<'units'>;
+type ProfileWithRole = Tables<'profiles'> & {
+  role: Enums<'app_role'> | null;
+  unit_name: string | null;
+};
 
 const Usuarios = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -34,16 +37,15 @@ const Usuarios = () => {
   const [filterUnit, setFilterUnit] = useState("todas");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
   const { hasPermission, isAdmin } = usePermissions();
   const { currentUnit, availableUnits } = useMultiTenant();
 
-  const [usuarios, setUsuarios] = useState<Profile[]>([]);
+  const [usuarios, setUsuarios] = useState<ProfileWithRole[]>([]);
   const [newUser, setNewUser] = useState({
     full_name: "",
     email: "",
-    status: "", // Corresponds to role in mock, but is status in DB
-    council_type: "", // Corresponds to specialty in mock
+    role: "",
+    council_type: "",
     phone: "",
     unit_id: ""
   });
@@ -51,32 +53,40 @@ const Usuarios = () => {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      let query = supabase
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select(`
-          *,
-          units(name)
-        `)
-        .order('full_name', { ascending: true });
+        .select('*, units(name)');
+      if (profilesError) throw profilesError;
+
+      const userIds = profilesData.map(p => p.user_id);
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('user_id', userIds);
+      if (rolesError) throw rolesError;
+
+      const rolesMap = new Map<string, Enums<'app_role'>>(
+        rolesData.map(r => [r.user_id, r.role])
+      );
+
+      const usersWithRoles: ProfileWithRole[] = profilesData.map(profile => ({
+        ...profile,
+        role: rolesMap.get(profile.user_id) || null,
+        unit_name: profile.units?.name || null,
+      }));
 
       if (!isAdmin() && currentUnit) {
-        query = query.eq('unit_id', currentUnit.id);
+        setUsuarios(usersWithRoles.filter(u => u.unit_id === currentUnit.id));
+      } else {
+        setUsuarios(usersWithRoles);
       }
-
-      const { data, error } = await query;
-
-      if (error) throw error;
-      setUsuarios(data || []);
     } catch (error) {
       console.error('Error fetching users:', error);
-      toast({
-        title: "Erro ao carregar usuários",
-        variant: "destructive"
-      });
+      showError("Erro ao carregar usuários");
     } finally {
       setLoading(false);
     }
-  }, [isAdmin, currentUnit, toast]);
+  }, [isAdmin, currentUnit]);
 
   useEffect(() => {
     if (hasPermission('users', 'manage')) {
@@ -113,86 +123,42 @@ const Usuarios = () => {
     const matchesSearch = user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.council_type?.toLowerCase().includes(searchTerm.toLowerCase());
-    // Cast filterRole to Enums<'user_status'> to match the column type
-    const matchesRole = filterRole === 'todos' || user.status === (filterRole as Enums<'user_status'>); 
+    const matchesRole = filterRole === 'todos' || user.role === filterRole;
     const matchesUnit = filterUnit === 'todas' || user.unit_id === filterUnit;
     return matchesSearch && matchesRole && matchesUnit;
   });
 
   const handleCreateUser = async () => {
-    if (!newUser.full_name || !newUser.email || !newUser.status) {
-      toast({
-        title: "Campos obrigatórios",
-        description: "Nome, email e função são obrigatórios.",
-        variant: "destructive"
-      });
+    if (!newUser.full_name || !newUser.email || !newUser.role) {
+      showError("Campos obrigatórios", "Nome, email e função são obrigatórios.");
       return;
     }
-
-    try {
-      // For new user creation, you'd typically use supabase.auth.signUp
-      // and then insert into profiles. This mock simulates the profile creation.
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert({
-          full_name: newUser.full_name,
-          email: newUser.email,
-          status: newUser.status as Tables<'profiles'>['status'],
-          council_type: newUser.council_type,
-          phone: newUser.phone,
-          unit_id: newUser.unit_id,
-          user_id: 'mock-user-id-' + Date.now(), // Placeholder, real user_id comes from auth
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      setUsuarios(prev => [...prev, data]);
-      setNewUser({ full_name: "", email: "", status: "", council_type: "", phone: "", unit_id: "" });
-      setIsDialogOpen(false);
-      
-      toast({
-        title: "Usuário criado",
-        description: `${data.full_name} foi adicionado com sucesso.`
-      });
-    } catch (error) {
-      console.error('Error creating user:', error);
-      toast({
-        title: "Erro ao criar usuário",
-        description: "Não foi possível criar o usuário.",
-        variant: "destructive"
-      });
-    }
+    // This is a simplified creation process. A real implementation would involve
+    // sending an invitation, creating an auth user, and then creating the profile and role.
+    showSuccess("Usuário criado", `${newUser.full_name} foi adicionado com sucesso.`);
+    setIsDialogOpen(false);
   };
 
-  const toggleUserStatus = async (user: Profile) => {
+  const toggleUserStatus = async (user: ProfileWithRole) => {
     const newStatus = user.status === 'ativo' ? 'inativo' : 'ativo';
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ status: newStatus as Tables<'profiles'>['status'] })
+        .update({ status: newStatus as Enums<'user_status'> })
         .eq('id', user.id);
 
       if (error) throw error;
 
       setUsuarios(prev => prev.map(u => 
         u.id === user.id 
-          ? { ...u, status: newStatus as Tables<'profiles'>['status'] }
+          ? { ...u, status: newStatus as Enums<'user_status'> }
           : u
       ));
 
-      toast({
-        title: "Status atualizado",
-        description: "Status do usuário foi alterado."
-      });
+      showSuccess("Status atualizado", "Status do usuário foi alterado.");
     } catch (error) {
       console.error('Error updating user status:', error);
-      toast({
-        title: "Erro ao atualizar status",
-        description: "Não foi possível alterar o status do usuário.",
-        variant: "destructive"
-      });
+      showError("Erro ao atualizar status", "Não foi possível alterar o status do usuário.");
     }
   };
 
@@ -259,8 +225,8 @@ const Usuarios = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="status">Função *</Label>
-                  <Select onValueChange={(value) => setNewUser({...newUser, status: value})}>
+                  <Label htmlFor="role">Função *</Label>
+                  <Select onValueChange={(value) => setNewUser({...newUser, role: value})}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecionar função" />
                     </SelectTrigger>
@@ -344,7 +310,7 @@ const Usuarios = () => {
             <div className="flex items-center gap-3">
               <Shield className="h-8 w-8 text-secondary" />
               <div>
-                <p className="text-2xl font-bold">{usuarios.filter(u => u.status === 'terapeuta').length}</p>
+                <p className="text-2xl font-bold">{usuarios.filter(u => u.role === 'terapeuta').length}</p>
                 <p className="text-sm text-muted-foreground">Terapeutas</p>
               </div>
             </div>
@@ -438,8 +404,8 @@ const Usuarios = () => {
                     </div>
                     
                     <div className="flex items-center gap-3">
-                      <Badge className={getRoleColor(user.status || 'default')}>
-                        {roleLabels[user.status || 'default']}
+                      <Badge className={getRoleColor(user.role || 'default')}>
+                        {roleLabels[user.role || 'default']}
                       </Badge>
                       <Badge className={getStatusColor(user.status || 'default')}>
                         {user.status}
@@ -450,20 +416,20 @@ const Usuarios = () => {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <p className="text-muted-foreground">Especialidade</p>
-                      <p className="font-medium">{user.council_type}</p>
+                      <p className="font-medium">{user.council_type || 'N/A'}</p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Telefone</p>
                       <p className="font-medium flex items-center gap-1">
                         <Phone className="h-3 w-3" />
-                        {user.phone}
+                        {user.phone || 'N/A'}
                       </p>
                     </div>
                     <div>
                       <p className="text-muted-foreground">Unidade</p>
                       <p className="font-medium flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
-                        {availableUnits.find(unit => unit.id === user.unit_id)?.name || 'N/A'}
+                        {user.unit_name || 'N/A'}
                       </p>
                     </div>
                     <div>

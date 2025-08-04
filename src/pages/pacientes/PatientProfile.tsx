@@ -25,12 +25,12 @@ import {
   Plus
 } from "lucide-react";
 import type { Evolution } from "../../types/Evolution";
-import { Tables, Enums } from "@/integrations/supabase/types"; // Import Enums
+import { Tables, Enums } from "@/integrations/supabase/types";
 import { Loading } from "@/components/ui/loading";
 
 type Patient = Tables<'patients'> & {
-  guardians?: Pick<Tables<'guardians'>, 'full_name' | 'email' | 'phone' | 'address'> | null; // Pick specific columns
-  units?: Pick<Tables<'units'>, 'name'> | null; // Pick specific columns
+  guardians?: Pick<Tables<'guardians'>, 'full_name' | 'email' | 'phone' | 'address'> | null;
+  units?: Pick<Tables<'units'>, 'name'> | null;
 };
 
 const PatientProfile = () => {
@@ -38,10 +38,17 @@ const PatientProfile = () => {
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
   const [patient, setPatient] = useState<Patient | null>(null);
-  const [evolutions, setEvolutions] = useState<Evolution[]>([]);
   const [loading, setLoading] = useState(true);
+  const [metrics, setMetrics] = useState({
+    frequencia: 0,
+    faltas: 0,
+    ultimaConsulta: null as string | null,
+    proximaConsulta: null as string | null,
+    historico: [] as any[],
+  });
 
   const fetchPatientData = useCallback(async () => {
+    if (!id) return;
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -56,41 +63,53 @@ const PatientProfile = () => {
 
       if (error) throw error;
       setPatient(data);
+
+      // Fetch appointment metrics
+      const { data: appointments, error: appointmentsError } = await supabase
+        .from('appointments')
+        .select('appointment_date, status, specialty, profiles(full_name)')
+        .eq('patient_id', id)
+        .order('appointment_date', { ascending: false });
+
+      if (appointmentsError) throw appointmentsError;
+
+      const today = new Date();
+      const lastMonth = new Date();
+      lastMonth.setMonth(today.getMonth() - 1);
+
+      const recentAppointments = appointments.filter(apt => new Date(apt.appointment_date) >= lastMonth);
+      const realizados = recentAppointments.filter(apt => apt.status === 'realizado').length;
+      const faltas = recentAppointments.filter(apt => apt.status === 'falta').length;
+      const totalConsidered = realizados + faltas;
+      const frequencia = totalConsidered > 0 ? Math.round((realizados / totalConsidered) * 100) : 100;
+
+      const ultimaConsulta = appointments.find(apt => new Date(apt.appointment_date) <= today && apt.status === 'realizado');
+      const proximaConsulta = [...appointments].reverse().find(apt => new Date(apt.appointment_date) > today && (apt.status === 'agendado' || apt.status === 'confirmado'));
+
+      setMetrics({
+        frequencia,
+        faltas,
+        ultimaConsulta: ultimaConsulta?.appointment_date || null,
+        proximaConsulta: proximaConsulta?.appointment_date || null,
+        historico: appointments.slice(0, 3).map(apt => ({
+          data: apt.appointment_date,
+          tipo: apt.specialty,
+          profissional: (apt.profiles as any)?.full_name || 'N/A',
+          status: apt.status
+        })),
+      });
+
     } catch (error) {
       console.error('Error fetching patient data:', error);
-      setPatient(null); // Set patient to null on error
+      setPatient(null);
     } finally {
       setLoading(false);
-    }
-  }, [id]);
-
-  const fetchPatientEvolutions = useCallback(async () => {
-    try {
-      const { data } = await supabase
-        .from('evolutions')
-        .select(`
-          *,
-          profiles!evolutions_professional_id_fkey(full_name, requires_supervision)
-        `)
-        .eq('patient_id', id)
-        .eq('status', 'Finalizada')
-        .order('created_at', { ascending: false });
-      
-      setEvolutions((data || []).map(ev => ({
-        ...ev,
-        content: ev.content as Evolution['content'],
-        supervisors_signature: ev.supervisors_signature as Evolution['supervisors_signature'],
-        profiles: ev.profiles as Evolution['profiles']
-      })));
-    } catch (error) {
-      console.error('Error fetching evolutions:', error);
     }
   }, [id]);
   
   useEffect(() => {
     fetchPatientData();
-    fetchPatientEvolutions();
-  }, [id, fetchPatientData, fetchPatientEvolutions]);
+  }, [id, fetchPatientData]);
 
   const canViewClinical = hasPermission('clinical_records', 'view');
   const canEditPatient = hasPermission('pacientes', 'update');
@@ -122,21 +141,6 @@ const PatientProfile = () => {
       </div>
     );
   }
-
-  // Mock data for fields not directly from DB for now
-  const mockPatientMetrics = {
-    frequencia: 95, // Needs calculation from appointments
-    faltas: 1, // Needs calculation from appointments
-    ultimaConsulta: "2024-01-12", // Needs fetching from appointments
-    proximaConsulta: "2024-01-18", // Needs fetching from appointments
-    terapeutas: ["Dra. Ana Costa", "TO. Carlos Lima"], // Needs fetching from assigned therapists
-    observacoes: "Paciente com evolução positiva. Família muito participativa.", // From patient.observations
-    historico: [ // Needs fetching from appointments/evolutions
-      { data: "2024-01-12", tipo: "Psicologia", profissional: "Dra. Ana Costa", status: "realizado" },
-      { data: "2024-01-10", tipo: "T.O.", profissional: "TO. Carlos Lima", status: "realizado" },
-      { data: "2024-01-08", tipo: "Psicologia", profissional: "Dra. Ana Costa", status: "faltou" },
-    ]
-  };
 
   return (
     <div className="space-y-6">
@@ -205,12 +209,7 @@ const PatientProfile = () => {
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
-                  <Badge className={
-                    patient.status === 'ativo' ? 'bg-success text-success-foreground' : 
-                    'bg-warning text-warning-foreground'
-                  }>
-                    {patient.status}
-                  </Badge>
+                  <Badge>Ativo</Badge>
                 </div>
               </CardContent>
             </Card>
@@ -262,66 +261,37 @@ const PatientProfile = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Frequência</span>
+                  <span className="text-sm text-muted-foreground">Frequência (mês)</span>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-success">{mockPatientMetrics.frequencia}%</p>
+                    <p className="text-2xl font-bold text-success">{metrics.frequencia}%</p>
                   </div>
                 </div>
                 <div className="w-full bg-medical-gray rounded-full h-2">
                   <div 
                     className="bg-success h-2 rounded-full"
-                    style={{ width: `${mockPatientMetrics.frequencia}%` }}
+                    style={{ width: `${metrics.frequencia}%` }}
                   />
                 </div>
                 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Faltas no mês</span>
-                  <Badge variant={mockPatientMetrics.faltas > 2 ? "destructive" : "outline"}>
-                    {mockPatientMetrics.faltas}
+                  <Badge variant={metrics.faltas > 2 ? "destructive" : "outline"}>
+                    {metrics.faltas}
                   </Badge>
                 </div>
 
                 <div>
                   <p className="text-sm text-muted-foreground">Última Consulta</p>
-                  <p className="font-medium">{new Date(mockPatientMetrics.ultimaConsulta).toLocaleDateString('pt-BR')}</p>
+                  <p className="font-medium">{metrics.ultimaConsulta ? new Date(metrics.ultimaConsulta).toLocaleDateString('pt-BR') : 'N/A'}</p>
                 </div>
 
                 <div>
                   <p className="text-sm text-muted-foreground">Próxima Consulta</p>
-                  <p className="font-medium">{new Date(mockPatientMetrics.proximaConsulta).toLocaleDateString('pt-BR')}</p>
+                  <p className="font-medium">{metrics.proximaConsulta ? new Date(metrics.proximaConsulta).toLocaleDateString('pt-BR') : 'N/A'}</p>
                 </div>
               </CardContent>
             </Card>
           </div>
-
-          {/* Equipe Terapêutica */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Heart className="h-5 w-5" />
-                Equipe Terapêutica
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {mockPatientMetrics.terapeutas.map((terapeuta, index) => (
-                  <div key={index} className="p-4 border border-medical-border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-semibold">
-                        {terapeuta.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                      </div>
-                      <div>
-                        <p className="font-medium">{terapeuta}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {terapeuta.includes('Dra.') ? 'Psicologia' : 'Terapia Ocupacional'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Histórico Recente */}
           <Card>
@@ -333,7 +303,7 @@ const PatientProfile = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {mockPatientMetrics.historico.map((item, index) => (
+                {metrics.historico.map((item, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-medical-gray rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className={`w-3 h-3 rounded-full ${
@@ -346,12 +316,7 @@ const PatientProfile = () => {
                         </p>
                       </div>
                     </div>
-                    <Badge className={
-                      item.status === 'realizado' ? 'bg-success text-success-foreground' : 
-                      'bg-destructive text-destructive-foreground'
-                    }>
-                      {item.status}
-                    </Badge>
+                    <Badge>{item.status}</Badge>
                   </div>
                 ))}
               </div>
@@ -377,7 +342,7 @@ const PatientProfile = () => {
         {/* Prontuário Médico */}
         <TabsContent value="prontuario">
           {canViewClinical ? (
-            <MedicalRecordTabs patientId={id} />
+            <MedicalRecordTabs patientId={id!} />
           ) : (
             <Card>
               <CardContent className="p-8 text-center">
