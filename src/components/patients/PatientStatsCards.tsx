@@ -58,7 +58,8 @@ export const PatientStatsCards: React.FC<PatientStatsCardsProps> = ({ stats, isA
               <p className="text-2xl font-bold">{stats.triagem}</p>
               <p className="text-sm text-muted-foreground">Em Triagem</p>
             </div>
-          </CardContent>
+          </div>
+        </CardContent>
       </Card>
       <Card>
         <CardContent className="p-4">
@@ -68,7 +69,8 @@ export const PatientStatsCards: React.FC<PatientStatsCardsProps> = ({ stats, isA
               <p className="text-2xl font-bold">{stats.pausados}</p>
               <p className="text-sm text-muted-foreground">Pausados</p>
             </div>
-          </CardContent>
+          </div>
+        </CardContent>
       </Card>
     </div>
   );
