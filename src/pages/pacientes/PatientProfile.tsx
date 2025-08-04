@@ -25,34 +25,44 @@ import {
   Plus
 } from "lucide-react";
 import type { Evolution } from "../../types/Evolution";
+import { Tables } from "@/integrations/supabase/types";
+import { Loading } from "@/components/ui/loading";
 
-interface Patient {
-  id: number;
-  nome: string;
-  idade: number;
-  dataNascimento: string;
-  responsavel: string;
-  telefone: string;
-  email: string;
-  endereco: string;
-  diagnostico: string;
-  unidade: string;
-  status: string;
-  ultimaConsulta: string;
-  proximaConsulta: string;
-  terapeutas: string[];
-  faltas: number;
-  frequencia: number;
-  convenio: string;
-  observacoes: string;
-  historico: Array<{ data: string; tipo: string; profissional: string; status: string }>;
-}
+type Patient = Tables<'patients'> & {
+  guardians?: Tables<'guardians'>;
+  units?: Tables<'units'>;
+};
 
 const PatientProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { hasPermission } = usePermissions();
+  const [patient, setPatient] = useState<Patient | null>(null);
   const [evolutions, setEvolutions] = useState<Evolution[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchPatientData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('patients')
+        .select(`
+          *,
+          guardians(full_name, email, phone, address),
+          units(name)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      setPatient(data);
+    } catch (error) {
+      console.error('Error fetching patient data:', error);
+      setPatient(null); // Set patient to null on error
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
 
   const fetchPatientEvolutions = useCallback(async () => {
     try {
@@ -60,7 +70,7 @@ const PatientProfile = () => {
         .from('evolutions')
         .select(`
           *,
-          profiles!evolutions_professional_id_fkey(full_name)
+          profiles!evolutions_professional_id_fkey(full_name, requires_supervision)
         `)
         .eq('patient_id', id)
         .eq('status', 'Finalizada')
@@ -68,8 +78,9 @@ const PatientProfile = () => {
       
       setEvolutions((data || []).map(ev => ({
         ...ev,
-        content: typeof ev.content === "string" ? JSON.parse(ev.content) : ev.content,
-        supervisors_signature: String(ev.supervisors_signature)
+        content: ev.content as Evolution['content'],
+        supervisors_signature: ev.supervisors_signature as Evolution['supervisors_signature'],
+        profiles: ev.profiles as Evolution['profiles']
       })));
     } catch (error) {
       console.error('Error fetching evolutions:', error);
@@ -77,38 +88,55 @@ const PatientProfile = () => {
   }, [id]);
   
   useEffect(() => {
+    fetchPatientData();
     fetchPatientEvolutions();
-  }, [id, fetchPatientEvolutions]);
+  }, [id, fetchPatientData, fetchPatientEvolutions]);
 
-  // Mock patient data - em produção viria do Supabase
-  const patient: Patient = {
-    id: parseInt(id || "1"),
-    nome: "João Silva Santos",
-    idade: 12,
-    dataNascimento: "2011-03-15",
-    responsavel: "Maria Silva",
-    telefone: "(11) 99999-1111",
-    email: "maria.silva@email.com",
-    endereco: "Rua das Flores, 123 - Centro",
-    diagnostico: "TEA - Transtorno do Espectro Autista",
-    unidade: "Centro",
-    status: "ativo",
-    ultimaConsulta: "2024-01-12",
-    proximaConsulta: "2024-01-18",
-    terapeutas: ["Dra. Ana Costa", "TO. Carlos Lima"],
-    faltas: 1,
-    frequencia: 95,
-    convenio: "Particular",
-    observacoes: "Paciente com evolução positiva. Família muito participativa.",
-    historico: [
+  const canViewClinical = hasPermission('clinical_records', 'view');
+  const canEditPatient = hasPermission('pacientes', 'update');
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loading />
+      </div>
+    );
+  }
+
+  if (!patient) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardContent className="p-8">
+            <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">Paciente não encontrado</h3>
+            <p className="text-muted-foreground mb-6">
+              Não foi possível carregar os dados do paciente com o ID: {id}.
+            </p>
+            <Button onClick={() => navigate("/app/pacientes")} className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Voltar para Pacientes
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Mock data for fields not directly from DB for now
+  const mockPatientMetrics = {
+    frequencia: 95, // Needs calculation from appointments
+    faltas: 1, // Needs calculation from appointments
+    ultimaConsulta: "2024-01-12", // Needs fetching from appointments
+    proximaConsulta: "2024-01-18", // Needs fetching from appointments
+    terapeutas: ["Dra. Ana Costa", "TO. Carlos Lima"], // Needs fetching from assigned therapists
+    observacoes: "Paciente com evolução positiva. Família muito participativa.", // From patient.observations
+    historico: [ // Needs fetching from appointments/evolutions
       { data: "2024-01-12", tipo: "Psicologia", profissional: "Dra. Ana Costa", status: "realizado" },
       { data: "2024-01-10", tipo: "T.O.", profissional: "TO. Carlos Lima", status: "realizado" },
       { data: "2024-01-08", tipo: "Psicologia", profissional: "Dra. Ana Costa", status: "faltou" },
     ]
   };
-
-  const canViewClinical = hasPermission('clinical_records', 'view');
-  const canEditPatient = hasPermission('pacientes', 'update');
 
   return (
     <div className="space-y-6">
@@ -122,9 +150,9 @@ const PatientProfile = () => {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-primary">{patient.nome}</h1>
+          <h1 className="text-3xl font-bold text-primary">{patient.full_name}</h1>
           <p className="text-muted-foreground">
-            {patient.idade} anos • {patient.diagnostico}
+            {patient.birth_date ? `${new Date().getFullYear() - new Date(patient.birth_date).getFullYear()} anos` : 'N/A'} • {patient.diagnosis}
           </p>
         </div>
         <div className="flex gap-2">
@@ -165,15 +193,15 @@ const PatientProfile = () => {
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Nome Completo</p>
-                  <p className="font-medium">{patient.nome}</p>
+                  <p className="font-medium">{patient.full_name}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Data de Nascimento</p>
-                  <p className="font-medium">{new Date(patient.dataNascimento).toLocaleDateString('pt-BR')}</p>
+                  <p className="font-medium">{patient.birth_date ? new Date(patient.birth_date).toLocaleDateString('pt-BR') : 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Diagnóstico</p>
-                  <p className="font-medium">{patient.diagnostico}</p>
+                  <p className="font-medium">{patient.diagnosis || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Status</p>
@@ -198,27 +226,27 @@ const PatientProfile = () => {
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-sm text-muted-foreground">Nome</p>
-                  <p className="font-medium">{patient.responsavel}</p>
+                  <p className="font-medium">{patient.guardians?.full_name || 'N/A'}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Telefone</p>
                   <p className="font-medium flex items-center gap-2">
                     <Phone className="h-4 w-4" />
-                    {patient.telefone}
+                    {patient.guardians?.phone || patient.phone || 'N/A'}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Email</p>
                   <p className="font-medium flex items-center gap-2">
                     <Mail className="h-4 w-4" />
-                    {patient.email}
+                    {patient.guardians?.email || 'N/A'}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">Endereço</p>
                   <p className="font-medium flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
-                    {patient.endereco}
+                    {patient.guardians?.address || patient.address || 'N/A'}
                   </p>
                 </div>
               </CardContent>
@@ -236,31 +264,31 @@ const PatientProfile = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Frequência</span>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-success">{patient.frequencia}%</p>
+                    <p className="text-2xl font-bold text-success">{mockPatientMetrics.frequencia}%</p>
                   </div>
                 </div>
                 <div className="w-full bg-medical-gray rounded-full h-2">
                   <div 
                     className="bg-success h-2 rounded-full"
-                    style={{ width: `${patient.frequencia}%` }}
+                    style={{ width: `${mockPatientMetrics.frequencia}%` }}
                   />
                 </div>
                 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Faltas no mês</span>
-                  <Badge variant={patient.faltas > 2 ? "destructive" : "outline"}>
-                    {patient.faltas}
+                  <Badge variant={mockPatientMetrics.faltas > 2 ? "destructive" : "outline"}>
+                    {mockPatientMetrics.faltas}
                   </Badge>
                 </div>
 
                 <div>
                   <p className="text-sm text-muted-foreground">Última Consulta</p>
-                  <p className="font-medium">{new Date(patient.ultimaConsulta).toLocaleDateString('pt-BR')}</p>
+                  <p className="font-medium">{new Date(mockPatientMetrics.ultimaConsulta).toLocaleDateString('pt-BR')}</p>
                 </div>
 
                 <div>
                   <p className="text-sm text-muted-foreground">Próxima Consulta</p>
-                  <p className="font-medium">{new Date(patient.proximaConsulta).toLocaleDateString('pt-BR')}</p>
+                  <p className="font-medium">{new Date(mockPatientMetrics.proximaConsulta).toLocaleDateString('pt-BR')}</p>
                 </div>
               </CardContent>
             </Card>
@@ -276,7 +304,7 @@ const PatientProfile = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {patient.terapeutas.map((terapeuta, index) => (
+                {mockPatientMetrics.terapeutas.map((terapeuta, index) => (
                   <div key={index} className="p-4 border border-medical-border rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center text-white font-semibold">
@@ -305,7 +333,7 @@ const PatientProfile = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {patient.historico.map((item, index) => (
+                {mockPatientMetrics.historico.map((item, index) => (
                   <div key={index} className="flex items-center justify-between p-3 bg-medical-gray rounded-lg">
                     <div className="flex items-center gap-3">
                       <div className={`w-3 h-3 rounded-full ${
@@ -331,7 +359,7 @@ const PatientProfile = () => {
           </Card>
 
           {/* Observações */}
-          {patient.observacoes && (
+          {patient.observations && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -340,75 +368,16 @@ const PatientProfile = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm leading-relaxed">{patient.observacoes}</p>
+                <p className="text-sm leading-relaxed">{patient.observations}</p>
               </CardContent>
             </Card>
           )}
         </TabsContent>
 
-        <TabsContent value="historico" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Linha do Tempo - Evoluções Clínicas
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {evolutions.length === 0 ? (
-                <div className="text-center py-8">
-                  <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600">Nenhuma evolução finalizada encontrada</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {evolutions.map((evolution: Evolution, index: number) => (
-                    <div key={evolution.id} className="relative">
-                      <div className="flex items-start space-x-4">
-                        <div className="flex-shrink-0">
-                          <div className="w-3 h-3 bg-primary rounded-full mt-2"></div>
-                          {index < evolutions.length - 1 && (
-                            <div className="w-0.5 h-16 bg-gray-300 ml-1 mt-2"></div>
-                          )}
-                        </div>
-                        <Card className="flex-1">
-                          <CardContent className="p-4">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <p className="font-medium">{evolution.profiles?.full_name}</p>
-                                <p className="text-sm text-gray-600">
-                                  {new Date(evolution.created_at).toLocaleDateString('pt-BR')}
-                                </p>
-                              </div>
-                              <Badge className="bg-green-100 text-green-800">
-                                Finalizada
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-gray-700 line-clamp-3">
-                              {evolution.content?.session_report || 'Sem relatório disponível'}
-                            </p>
-                            {evolution.content?.inappropriate_behavior && (
-                              <div className="mt-2 p-2 bg-red-50 rounded border-l-4 border-red-400">
-                                <p className="text-xs text-red-700 font-medium">
-                                  ⚠️ Comportamento inadequado relatado
-                                </p>
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         {/* Prontuário Médico */}
         <TabsContent value="prontuario">
           {canViewClinical ? (
-            <MedicalRecordTabs />
+            <MedicalRecordTabs patientId={id} />
           ) : (
             <Card>
               <CardContent className="p-8 text-center">

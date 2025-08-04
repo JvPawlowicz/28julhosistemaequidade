@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,13 +30,16 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { SmartScheduler } from "@/components/SmartScheduler";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
+import { Loading } from "@/components/ui/loading";
+import { EmptyState } from "@/components/EmptyState";
 
-interface Appointment {
-  id: string;
-  date: string;
-  status: string;
-  // Adicione outros campos conforme necessário
-}
+type Appointment = Tables<'appointments'> & {
+  patients?: Tables<'patients'>;
+  profiles?: Tables<'profiles'>;
+  rooms?: Tables<'rooms'>;
+};
 
 const Agenda = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -43,85 +47,76 @@ const Agenda = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [showSmartScheduler, setShowSmartScheduler] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { currentUnit } = useMultiTenant();
-  const { isAdmin, getUserRole } = usePermissions();
+  const { currentUnit, isAdmin } = useMultiTenant();
+  const { getUserRole, hasPermission } = usePermissions();
 
-  // Mock agenda data with enhanced information
-  const appointments = [
-    {
-      id: 1,
-      date: "2024-01-15",
-      startTime: "08:00",
-      endTime: "09:00", 
-      patient: "João Silva Santos",
-      idade: 12,
-      therapist: "Dra. Ana Costa",
-      type: "Individual",
-      room: "Sala 3",
-      status: "confirmado",
-      specialty: "Psicologia",
-      telefone: "(11) 99999-1111",
-      convenio: "Particular",
-      preco: "R$ 120,00",
-      procedimento: "Terapia Comportamental",
-      observacoes: "Primeira sessão do mês"
-    },
-    {
-      id: 2,
-      date: "2024-01-15",
-      startTime: "09:00",
-      endTime: "10:00",
-      patient: "Maria Santos Oliveira", 
-      idade: 8,
-      therapist: "TO. Carlos Lima",
-      type: "Individual",
-      room: "Sala 5",
-      status: "realizado",
-      specialty: "Terapia Ocupacional",
-      telefone: "(11) 99999-2222",
-      convenio: "Unimed",
-      preco: "Convênio",
-      procedimento: "Integração Sensorial",
-      observacoes: "Evolução excelente"
-    },
-    {
-      id: 3,
-      date: "2024-01-15",
-      startTime: "10:30",
-      endTime: "11:30",
-      patient: "Grupo Habilidades Sociais",
-      idade: null,
-      therapist: "Dra. Ana Costa",
-      type: "Grupo",
-      room: "Sala Grande",
-      status: "aguardando",
-      specialty: "Psicologia",
-      telefone: "Múltiplos",
-      convenio: "Misto",
-      preco: "R$ 80,00/pac",
-      procedimento: "Terapia em Grupo",
-      observacoes: "4 crianças participantes"
-    },
-    {
-      id: 4,
-      date: "2024-01-16",
-      startTime: "14:00",
-      endTime: "15:00",
-      patient: "Pedro Costa",
-      idade: 15,
-      therapist: "Fga. Paula Silva", 
-      type: "Individual",
-      room: "Sala 2",
-      status: "faltou",
-      specialty: "Fonoaudiologia",
-      telefone: "(11) 99999-3333",
-      convenio: "SulAmérica",
-      preco: "Convênio",
-      procedimento: "Terapia da Fala",
-      observacoes: "Reagendar"
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [therapists, setTherapists] = useState<Tables<'profiles'>[]>([]);
+  const [rooms, setRooms] = useState<Tables<'rooms'>[]>([]);
+
+  const fetchAppointments = useCallback(async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('appointments')
+        .select(`
+          *,
+          patients(full_name, phone),
+          profiles(full_name),
+          rooms(name)
+        `)
+        .order('start_time', { ascending: true });
+
+      if (!isAdmin() && currentUnit) {
+        query = query.eq('unit_id', currentUnit.id);
+      }
+      if (getUserRole() === 'terapeuta' || getUserRole() === 'estagiario') {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          query = query.eq('therapist_id', user.id);
+        }
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setAppointments(data || []);
+    } catch (error) {
+      console.error('Error fetching appointments:', error);
+      toast({
+        title: "Erro ao carregar agenda",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, [isAdmin, currentUnit, getUserRole, toast]);
+
+  const fetchTherapistsAndRooms = useCallback(async () => {
+    try {
+      const [{ data: therapistsData, error: therapistsError }, { data: roomsData, error: roomsError }] = await Promise.all([
+        supabase.from('profiles').select('id, full_name, council_type').in('status', ['terapeuta', 'estagiario', 'coordenador']),
+        supabase.from('rooms').select('id, name')
+      ]);
+
+      if (therapistsError) throw therapistsError;
+      if (roomsError) throw roomsError;
+
+      setTherapists(therapistsData || []);
+      setRooms(roomsData || []);
+    } catch (error) {
+      console.error('Error fetching therapists and rooms:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (hasPermission('agenda', 'view')) {
+      fetchAppointments();
+      fetchTherapistsAndRooms();
+    }
+  }, [fetchAppointments, fetchTherapistsAndRooms, hasPermission]);
 
   const timeSlots = [
     "08:00", "08:30", "09:00", "09:30", "10:00", "10:30", 
@@ -130,39 +125,83 @@ const Agenda = () => {
   ];
 
   const days = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
-  const currentWeek = ["13/01", "14/01", "15/01", "16/01", "17/01"];
+  const currentWeek = ["13/01", "14/01", "15/01", "16/01", "17/01"]; // This should be dynamically calculated
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'chegou': return 'bg-success text-success-foreground';
+      case 'realizado': return 'bg-success text-success-foreground';
       case 'confirmado': return 'bg-primary text-primary-foreground';
-      case 'remarcado': return 'bg-warning text-warning-foreground';
-      case 'faltou': return 'bg-destructive text-destructive-foreground';
+      case 'agendado': return 'bg-warning text-warning-foreground';
+      case 'falta': return 'bg-destructive text-destructive-foreground';
+      case 'cancelado': return 'bg-muted text-muted-foreground';
       default: return 'bg-muted text-muted-foreground';
     }
   };
 
   const getSpecialtyColor = (specialty: string) => {
     switch (specialty) {
-      case 'Psicologia': return 'border-l-4 border-l-primary';
-      case 'Terapia Ocupacional': return 'border-l-4 border-l-secondary';
-      case 'Fonoaudiologia': return 'border-l-4 border-l-warning';
+      case 'psicologia': return 'border-l-4 border-l-primary';
+      case 'terapia_ocupacional': return 'border-l-4 border-l-secondary';
+      case 'fonoaudiologia': return 'border-l-4 border-l-warning';
+      case 'fisioterapia': return 'border-l-4 border-l-success';
       default: return 'border-l-4 border-l-muted';
     }
   };
 
   const filteredAppointments = appointments.filter(apt => {
-    const matchesSearch = apt.patient.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         apt.therapist.toLowerCase().includes(searchTerm.toLowerCase());
+    const patientName = apt.patients?.full_name?.toLowerCase() || '';
+    const therapistName = apt.profiles?.full_name?.toLowerCase() || '';
+    const matchesSearch = patientName.includes(searchTerm.toLowerCase()) ||
+                         therapistName.includes(searchTerm.toLowerCase());
     return matchesSearch;
   });
 
-  const handleUpdateStatus = (id: number, newStatus: string) => {
-    toast({
-      title: "Status atualizado",
-      description: `Agendamento marcado como ${newStatus}`
-    });
+  const handleUpdateStatus = async (id: string, newStatus: Tables<'appointments'>['status']) => {
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ status: newStatus })
+        .eq('id', id);
+
+      if (error) throw error;
+      toast({
+        title: "Status atualizado",
+        description: `Agendamento marcado como ${newStatus}`
+      });
+      fetchAppointments(); // Re-fetch to update UI
+    } catch (error) {
+      console.error('Error updating appointment status:', error);
+      toast({
+        title: "Erro ao atualizar status",
+        description: "Não foi possível atualizar o status do agendamento.",
+        variant: "destructive"
+      });
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loading />
+      </div>
+    );
+  }
+
+  if (!hasPermission('agenda', 'view')) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Card className="text-center p-8">
+          <CardContent>
+            <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Acesso Restrito</h2>
+            <p className="text-muted-foreground">
+              Você não tem permissão para visualizar a agenda.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -226,11 +265,11 @@ const Agenda = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos Status</SelectItem>
+                <SelectItem value="agendado">Agendado</SelectItem>
                 <SelectItem value="confirmado">Confirmado</SelectItem>
-                <SelectItem value="aguardando">Aguardando</SelectItem>
                 <SelectItem value="realizado">Realizado</SelectItem>
-                <SelectItem value="faltou">Faltou</SelectItem>
-                <SelectItem value="remarcado">Remarcado</SelectItem>
+                <SelectItem value="falta">Faltou</SelectItem>
+                <SelectItem value="cancelado">Cancelado</SelectItem>
               </SelectContent>
             </Select>
 
@@ -240,9 +279,11 @@ const Agenda = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Todos</SelectItem>
-                <SelectItem value="Ana">Dra. Ana Costa</SelectItem>
-                <SelectItem value="Carlos">TO. Carlos Lima</SelectItem>
-                <SelectItem value="Paula">Fga. Paula Silva</SelectItem>
+                {therapists.map(therapist => (
+                  <SelectItem key={therapist.id} value={therapist.id}>
+                    {therapist.full_name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -252,10 +293,11 @@ const Agenda = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todas">Todas</SelectItem>
-                <SelectItem value="Sala 2">Sala 2</SelectItem>
-                <SelectItem value="Sala 3">Sala 3</SelectItem>
-                <SelectItem value="Sala 5">Sala 5</SelectItem>
-                <SelectItem value="Sala Grande">Sala Grande</SelectItem>
+                {rooms.map(room => (
+                  <SelectItem key={room.id} value={room.id}>
+                    {room.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -319,36 +361,45 @@ const Agenda = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {filteredAppointments.filter(apt => apt.date === "2024-01-15").map((appointment) => (
-                <div key={appointment.id} className={`p-4 rounded-lg bg-medical-gray ${getSpecialtyColor(appointment.specialty)}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-3">
-                      <div className="text-sm font-mono text-primary">
-                        {appointment.startTime} - {appointment.endTime}
+            {filteredAppointments.length === 0 ? (
+              <EmptyState
+                icon={Calendar}
+                title="Nenhum agendamento"
+                description="Não há agendamentos para o dia selecionado."
+              />
+            ) : (
+              <div className="space-y-3">
+                {filteredAppointments.filter(apt => new Date(apt.appointment_date).toDateString() === new Date("2024-01-15").toDateString()).map((appointment) => (
+                  <div key={appointment.id} className={`p-4 rounded-lg bg-medical-gray ${getSpecialtyColor(appointment.specialty)}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-3">
+                        <div className="text-sm font-mono text-primary">
+                          {appointment.start_time} - {appointment.end_time}
+                        </div>
+                        <Badge className={getStatusColor(appointment.status || 'agendado')}>
+                          {appointment.status}
+                        </Badge>
                       </div>
-                      <Badge className={getStatusColor(appointment.status)}>
-                        {appointment.status}
-                      </Badge>
+                      <Badge variant="outline">{appointment.specialty}</Badge>
                     </div>
-                    <Badge variant="outline">{appointment.specialty}</Badge>
+                    
+                    <h4 className="font-medium mb-1">{appointment.patients?.full_name}</h4>
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        {appointment.profiles?.full_name}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {appointment.rooms?.name}
+                      </span>
+                      {/* Type is not in DB, assuming individual for now */}
+                      <span>Individual</span>
+                    </div>
                   </div>
-                  
-                  <h4 className="font-medium mb-1">{appointment.patient}</h4>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <User className="h-3 w-3" />
-                      {appointment.therapist}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {appointment.room}
-                    </span>
-                    <span>{appointment.type}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -359,51 +410,59 @@ const Agenda = () => {
             <CardTitle>Visão Semanal - 13 a 17 de Janeiro</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-6 gap-4">
-              {/* Time column */}
-              <div className="space-y-2">
-                <div className="h-12 flex items-center justify-center font-medium text-sm">
-                  Horário
+            {filteredAppointments.length === 0 ? (
+              <EmptyState
+                icon={Calendar}
+                title="Nenhum agendamento"
+                description="Não há agendamentos para a semana selecionada."
+              />
+            ) : (
+              <div className="grid grid-cols-6 gap-4">
+                {/* Time column */}
+                <div className="space-y-2">
+                  <div className="h-12 flex items-center justify-center font-medium text-sm">
+                    Horário
+                  </div>
+                  {timeSlots.map((time) => (
+                    <div key={time} className="h-16 flex items-center justify-center text-sm text-muted-foreground">
+                      {time}
+                    </div>
+                  ))}
                 </div>
-                {timeSlots.map((time) => (
-                  <div key={time} className="h-16 flex items-center justify-center text-sm text-muted-foreground">
-                    {time}
+                
+                {/* Days columns */}
+                {days.map((day, dayIndex) => (
+                  <div key={day} className="space-y-2">
+                    <div className="h-12 flex items-center justify-center bg-medical-gray rounded-lg">
+                      <div className="text-center">
+                        <div className="font-medium">{day}</div>
+                        <div className="text-sm text-muted-foreground">{currentWeek[dayIndex]}</div>
+                      </div>
+                    </div>
+                    
+                    {timeSlots.map((time) => {
+                      const appointment = appointments.find(apt => 
+                        new Date(apt.appointment_date).toDateString() === new Date(`2024-01-${13 + dayIndex}`).toDateString() && apt.start_time === time
+                      );
+                      
+                      return (
+                        <div key={time} className="h-16 border border-medical-border rounded relative">
+                          {appointment && (
+                            <div className={`absolute inset-1 p-1 rounded text-xs ${getSpecialtyColor(appointment.specialty)} bg-white`}>
+                              <div className="font-medium truncate">{appointment.patients?.full_name}</div>
+                              <div className="text-muted-foreground truncate">{appointment.profiles?.full_name}</div>
+                              <Badge className={`${getStatusColor(appointment.status || 'agendado')} mt-1`}>
+                                {appointment.status}
+                              </Badge>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 ))}
               </div>
-              
-              {/* Days columns */}
-              {days.map((day, dayIndex) => (
-                <div key={day} className="space-y-2">
-                  <div className="h-12 flex items-center justify-center bg-medical-gray rounded-lg">
-                    <div className="text-center">
-                      <div className="font-medium">{day}</div>
-                      <div className="text-sm text-muted-foreground">{currentWeek[dayIndex]}</div>
-                    </div>
-                  </div>
-                  
-                  {timeSlots.map((time) => {
-                    const appointment = appointments.find(apt => 
-                      apt.date === `2024-01-${13 + dayIndex}` && apt.startTime === time
-                    );
-                    
-                    return (
-                      <div key={time} className="h-16 border border-medical-border rounded relative">
-                        {appointment && (
-                          <div className={`absolute inset-1 p-1 rounded text-xs ${getSpecialtyColor(appointment.specialty)} bg-white`}>
-                            <div className="font-medium truncate">{appointment.patient.split(',')[0]}</div>
-                            <div className="text-muted-foreground truncate">{appointment.therapist.split('.')[1]}</div>
-                            <Badge className={`${getStatusColor(appointment.status)} mt-1`}>
-                              {appointment.status}
-                            </Badge>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
+            )}
           </CardContent>
         </Card>
       )}
@@ -434,10 +493,11 @@ const Agenda = () => {
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-            <Badge className="bg-success text-success-foreground">Chegou</Badge>
+            <Badge className="bg-success text-success-foreground">Realizado</Badge>
             <Badge className="bg-primary text-primary-foreground">Confirmado</Badge>
-            <Badge className="bg-warning text-warning-foreground">Remarcado</Badge>
+            <Badge className="bg-warning text-warning-foreground">Agendado</Badge>
             <Badge className="bg-destructive text-destructive-foreground">Faltou</Badge>
+            <Badge className="bg-muted text-muted-foreground">Cancelado</Badge>
           </div>
         </CardContent>
       </Card>

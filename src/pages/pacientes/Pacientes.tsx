@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,103 +27,73 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
+
+type Patient = Tables<'patients'> & {
+  guardians?: Tables<'guardians'>; // Assuming primary_guardian_id can be joined
+  units?: Tables<'units'>; // Assuming unit_id can be joined
+};
 
 const Pacientes = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("todos");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { currentUnit } = useMultiTenant();
-  const { isAdmin, getUserRole } = usePermissions();
+  const { currentUnit, isAdmin } = useMultiTenant();
+  const { hasPermission, getUserRole } = usePermissions();
 
-  const [pacientes] = useState([
-    {
-      id: 1,
-      nome: "João Silva Santos",
-      idade: 12,
-      dataNascimento: "2011-03-15",
-      responsavel: "Maria Silva",
-      telefone: "(11) 99999-1111",
-      email: "maria.silva@email.com",
-      diagnostico: "TEA - Transtorno do Espectro Autista",
-      unidade: "Centro",
-      status: "ativo",
-      ultimaConsulta: "2024-01-12",
-      proximaConsulta: "2024-01-18",
-      terapeutas: ["Dra. Ana Costa", "TO. Carlos Lima"],
-      faltas: 1,
-      frequencia: 95
-    },
-    {
-      id: 2,
-      nome: "Maria Oliveira Santos", 
-      idade: 8,
-      dataNascimento: "2015-07-22",
-      responsavel: "José Oliveira",
-      telefone: "(11) 99999-2222",
-      email: "jose.oliveira@email.com",
-      diagnostico: "TDAH - Transtorno do Déficit de Atenção",
-      unidade: "Norte",
-      status: "ativo",
-      ultimaConsulta: "2024-01-14",
-      proximaConsulta: "2024-01-19",
-      terapeutas: ["Fga. Paula Silva"],
-      faltas: 0,
-      frequencia: 100
-    },
-    {
-      id: 3,
-      nome: "Pedro Costa Mendes",
-      idade: 15,
-      dataNascimento: "2008-11-08",
-      responsavel: "Carla Costa",
-      telefone: "(11) 99999-3333", 
-      email: "carla.costa@email.com",
-      diagnostico: "Síndrome de Down",
-      unidade: "Sul",
-      status: "ativo",
-      ultimaConsulta: "2024-01-10",
-      proximaConsulta: "2024-01-20",
-      terapeutas: ["TO. Carlos Lima", "Ft. Roberto Silva"],
-      faltas: 2,
-      frequencia: 88
-    },
-    {
-      id: 4,
-      nome: "Ana Beatriz Lima",
-      idade: 9,
-      dataNascimento: "2014-05-12",
-      responsavel: "Roberto Lima",
-      telefone: "(11) 99999-4444",
-      email: "roberto.lima@email.com", 
-      diagnostico: "Atraso no Desenvolvimento",
-      unidade: "Centro",
-      status: "triagem",
-      ultimaConsulta: "2024-01-08",
-      proximaConsulta: "2024-01-22",
-      terapeutas: ["Dra. Ana Costa"],
-      faltas: 0,
-      frequencia: 100
-    },
-    {
-      id: 5,
-      nome: "Carlos Eduardo Mendes",
-      idade: 7,
-      dataNascimento: "2016-09-30",
-      responsavel: "Sandra Mendes",
-      telefone: "(11) 99999-5555",
-      email: "sandra.mendes@email.com",
-      diagnostico: "Deficiência Intelectual Leve",
-      unidade: "Norte", 
-      status: "pausado",
-      ultimaConsulta: "2023-12-15",
-      proximaConsulta: null,
-      terapeutas: ["TO. Carlos Lima", "Fga. Paula Silva"],
-      faltas: 5,
-      frequencia: 65
+  const [pacientes, setPacientes] = useState<Patient[]>([]);
+  const [newPatient, setNewPatient] = useState({
+    full_name: "",
+    birth_date: "",
+    primary_guardian_name: "", // Not directly in DB, would need to create guardian first
+    relationship: "",
+    phone: "",
+    email: "",
+    diagnosis: "",
+    unit_id: "",
+    status: "" // Initial status
+  });
+
+  const fetchPatients = useCallback(async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('patients')
+        .select(`
+          *,
+          guardians(full_name, email, phone),
+          units(name)
+        `)
+        .order('full_name', { ascending: true });
+
+      if (!isAdmin() && currentUnit) {
+        query = query.eq('unit_id', currentUnit.id);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setPacientes(data || []);
+    } catch (error) {
+      console.error('Error fetching patients:', error);
+      toast({
+        title: "Erro ao carregar pacientes",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-  ]);
+  }, [isAdmin, currentUnit, toast]);
+
+  useEffect(() => {
+    if (hasPermission('pacientes', 'view')) {
+      fetchPatients();
+    }
+  }, [fetchPatients, hasPermission]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -141,39 +111,108 @@ const Pacientes = () => {
     return 'text-destructive';
   };
 
-  // Simular filtro por unidade - Admin vê todos, outros apenas da sua unidade
-  const getAllPacientes = () => pacientes;
-  
-  const getPacientesByUnit = () => {
-    if (isAdmin() && currentUnit) {
-      // Admin filtra pela unidade selecionada
-      return pacientes.filter(p => p.unidade === currentUnit.name);
-    } else if (getUserRole() === 'terapeuta' || getUserRole() === 'estagiario') {
-      // Terapeuta vê apenas seus pacientes (simulado)
-      return pacientes.filter(p => p.terapeutas.some(t => t.includes('Ana')));
-    } else {
-      // Outros roles veem todos da unidade Centro (padrão)
-      return pacientes.filter(p => p.unidade === 'Centro');
-    }
-  };
+  const displayedPacientes = pacientes; // Now directly using fetched patients
 
-  const displayedPacientes = getPacientesByUnit();
-  
   const filteredPacientes = displayedPacientes.filter(paciente => {
-    const matchesSearch = paciente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         paciente.responsavel.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         paciente.diagnostico.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = paciente.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         paciente.guardians?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         paciente.diagnosis?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'todos' || paciente.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
   const stats = {
-    total: getAllPacientes().length,
-    displayed: displayedPacientes.length,
-    ativos: displayedPacientes.filter(p => p.status === 'ativo').length,
-    triagem: displayedPacientes.filter(p => p.status === 'triagem').length,
-    pausados: displayedPacientes.filter(p => p.status === 'pausado').length
+    total: pacientes.length, // Total fetched
+    displayed: filteredPacientes.length,
+    ativos: filteredPacientes.filter(p => p.status === 'ativo').length,
+    triagem: filteredPacientes.filter(p => p.status === 'triagem').length,
+    pausados: filteredPacientes.filter(p => p.status === 'pausado').length
   };
+
+  const handleCreatePatient = async () => {
+    if (!newPatient.full_name || !newPatient.birth_date || !newPatient.primary_guardian_name || !newPatient.phone || !newPatient.unit_id || !newPatient.status) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha todos os campos obrigatórios.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // First, create the guardian
+      const { data: guardianData, error: guardianError } = await supabase
+        .from('guardians')
+        .insert({
+          full_name: newPatient.primary_guardian_name,
+          birth_date: '2000-01-01', // Placeholder, consider adding to form
+          cpf: '00000000000', // Placeholder, consider adding to form
+          phone: newPatient.phone,
+          email: newPatient.email,
+          relationship: newPatient.relationship,
+        })
+        .select()
+        .single();
+
+      if (guardianError) throw guardianError;
+
+      // Then, create the patient linking to the new guardian
+      const { data: patientData, error: patientError } = await supabase
+        .from('patients')
+        .insert({
+          full_name: newPatient.full_name,
+          birth_date: newPatient.birth_date,
+          phone: newPatient.phone,
+          diagnosis: newPatient.diagnosis,
+          unit_id: newPatient.unit_id,
+          status: newPatient.status,
+          primary_guardian_id: guardianData.id,
+        })
+        .select(`
+          *,
+          guardians(full_name, email, phone),
+          units(name)
+        `)
+        .single();
+
+      if (patientError) throw patientError;
+
+      setPacientes(prev => [...prev, patientData]);
+      setNewPatient({
+        full_name: "", birth_date: "", primary_guardian_name: "", relationship: "",
+        phone: "", email: "", diagnosis: "", unit_id: "", status: ""
+      });
+      setIsDialogOpen(false);
+      
+      toast({
+        title: "Paciente cadastrado",
+        description: `${patientData.full_name} foi adicionado com sucesso.`
+      });
+    } catch (error) {
+      console.error('Error creating patient:', error);
+      toast({
+        title: "Erro ao cadastrar paciente",
+        description: "Não foi possível cadastrar o paciente.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (!hasPermission('pacientes', 'view')) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Card className="text-center p-8">
+          <CardContent>
+            <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Acesso Restrito</h2>
+            <p className="text-muted-foreground">
+              Você não tem permissão para visualizar pacientes.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -202,22 +241,34 @@ const Pacientes = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Nome Completo *</label>
-                  <Input placeholder="Nome do paciente" />
+                  <Input 
+                    placeholder="Nome do paciente" 
+                    value={newPatient.full_name}
+                    onChange={(e) => setNewPatient(prev => ({ ...prev, full_name: e.target.value }))}
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Data de Nascimento *</label>
-                  <Input type="date" />
+                  <Input 
+                    type="date" 
+                    value={newPatient.birth_date}
+                    onChange={(e) => setNewPatient(prev => ({ ...prev, birth_date: e.target.value }))}
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Nome do Responsável *</label>
-                  <Input placeholder="Nome completo do responsável" />
+                  <Input 
+                    placeholder="Nome completo do responsável" 
+                    value={newPatient.primary_guardian_name}
+                    onChange={(e) => setNewPatient(prev => ({ ...prev, primary_guardian_name: e.target.value }))}
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Parentesco</label>
-                  <Select>
+                  <Select onValueChange={(value) => setNewPatient(prev => ({ ...prev, relationship: value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecionar" />
                     </SelectTrigger>
@@ -234,49 +285,63 @@ const Pacientes = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Telefone *</label>
-                  <Input placeholder="(11) 99999-9999" />
+                  <Input 
+                    placeholder="(11) 99999-9999" 
+                    value={newPatient.phone}
+                    onChange={(e) => setNewPatient(prev => ({ ...prev, phone: e.target.value }))}
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Email</label>
-                  <Input type="email" placeholder="email@exemplo.com" />
+                  <Input 
+                    type="email" 
+                    placeholder="email@exemplo.com" 
+                    value={newPatient.email}
+                    onChange={(e) => setNewPatient(prev => ({ ...prev, email: e.target.value }))}
+                  />
                 </div>
               </div>
 
               <div>
                 <label className="text-sm font-medium">Diagnóstico/Suspeita Clínica</label>
-                <Input placeholder="Ex: TEA, TDAH, Síndrome de Down..." />
+                <Input 
+                  placeholder="Ex: TEA, TDAH, Síndrome de Down..." 
+                  value={newPatient.diagnosis}
+                  onChange={(e) => setNewPatient(prev => ({ ...prev, diagnosis: e.target.value }))}
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">Unidade de Atendimento</label>
-                  <Select>
+                  <label className="text-sm font-medium">Unidade de Atendimento *</label>
+                  <Select onValueChange={(value) => setNewPatient(prev => ({ ...prev, unit_id: value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecionar unidade" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="centro">Centro</SelectItem>
-                      <SelectItem value="norte">Norte</SelectItem>
-                      <SelectItem value="sul">Sul</SelectItem>
+                      {currentUnit && <SelectItem value={currentUnit.id}>{currentUnit.name}</SelectItem>}
+                      {/* Add other available units if admin */}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Status Inicial</label>
-                  <Select>
+                  <label className="text-sm font-medium">Status Inicial *</label>
+                  <Select onValueChange={(value) => setNewPatient(prev => ({ ...prev, status: value }))}>
                     <SelectTrigger>
                       <SelectValue placeholder="Selecionar status" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="triagem">Triagem</SelectItem>
                       <SelectItem value="ativo">Ativo</SelectItem>
+                      <SelectItem value="pausado">Pausado</SelectItem>
+                      <SelectItem value="alta">Alta</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div className="flex gap-3">
-                <Button onClick={() => setIsDialogOpen(false)} className="flex-1">
+                <Button onClick={handleCreatePatient} className="flex-1">
                   Cadastrar Paciente
                 </Button>
                 <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
@@ -386,110 +451,125 @@ const Pacientes = () => {
           <CardTitle>Lista de Pacientes ({filteredPacientes.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {filteredPacientes.map((paciente) => (
-              <div key={paciente.id} className="p-4 border border-medical-border rounded-lg">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center text-white font-semibold text-lg">
-                      {paciente.nome.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-lg">{paciente.nome}</h4>
-                      <p className="text-sm text-muted-foreground">{paciente.idade} anos • {paciente.diagnostico}</p>
-                      <div className="flex items-center gap-4 mt-1">
-                        <span className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Phone className="h-3 w-3" />
-                          {paciente.responsavel}
-                        </span>
-                        <Badge className={getStatusColor(paciente.status)}>
-                          {paciente.status}
-                        </Badge>
+          {loading ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Carregando pacientes...
+            </div>
+          ) : filteredPacientes.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
+              <p>Nenhum paciente encontrado</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredPacientes.map((paciente) => (
+                <div key={paciente.id} className="p-4 border border-medical-border rounded-lg">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-16 h-16 bg-gradient-to-r from-primary to-secondary rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                        {paciente.full_name?.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-lg">{paciente.full_name}</h4>
+                        <p className="text-sm text-muted-foreground">
+                          {paciente.birth_date ? `${new Date().getFullYear() - new Date(paciente.birth_date).getFullYear()} anos` : 'N/A'} • {paciente.diagnosis}
+                        </p>
+                        <div className="flex items-center gap-4 mt-1">
+                          <span className="text-sm text-muted-foreground flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            {paciente.guardians?.full_name || 'N/A'}
+                          </span>
+                          <Badge className={getStatusColor(paciente.status || 'default')}>
+                            {paciente.status}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="text-right">
-                    <div className={`text-2xl font-bold ${getFrequenciaColor(paciente.frequencia)}`}>
-                      {paciente.frequencia}%
+                    
+                    <div className="text-right">
+                      {/* Frequência and Faltas are mock data, not directly from DB */}
+                      <div className={`text-2xl font-bold ${getFrequenciaColor(95)}`}>
+                        95%
+                      </div>
+                      <p className="text-xs text-muted-foreground">Frequência</p>
                     </div>
-                    <p className="text-xs text-muted-foreground">Frequência</p>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 text-sm">
-                  <div>
-                    <p className="text-muted-foreground">Contato</p>
-                    <p className="font-medium flex items-center gap-1">
-                      <Phone className="h-3 w-3" />
-                      {paciente.telefone}
-                    </p>
-                    <p className="font-medium flex items-center gap-1">
-                      <Mail className="h-3 w-3" />
-                      {paciente.email}
-                    </p>
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 text-sm">
+                    <div>
+                      <p className="text-muted-foreground">Contato</p>
+                      <p className="font-medium flex items-center gap-1">
+                        <Phone className="h-3 w-3" />
+                        {paciente.phone}
+                      </p>
+                      <p className="font-medium flex items-center gap-1">
+                        <Mail className="h-3 w-3" />
+                        {paciente.guardians?.email || 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Unidade</p>
+                      <p className="font-medium flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        {paciente.units?.name || 'N/A'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Criado em</p>
+                      <p className="font-medium">{new Date(paciente.created_at).toLocaleDateString('pt-BR')}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground">Próxima Consulta</p>
+                      <p className="font-medium">
+                        {/* This would need to be fetched from appointments */}
+                        Não agendada
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-muted-foreground">Unidade</p>
-                    <p className="font-medium flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {paciente.unidade}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Última Consulta</p>
-                    <p className="font-medium">{new Date(paciente.ultimaConsulta).toLocaleDateString('pt-BR')}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Próxima Consulta</p>
-                    <p className="font-medium">
-                      {paciente.proximaConsulta ? new Date(paciente.proximaConsulta).toLocaleDateString('pt-BR') : 'Não agendada'}
-                    </p>
-                  </div>
-                </div>
 
-                <div className="mb-4">
-                  <p className="text-sm text-muted-foreground mb-2">Equipe Terapêutica:</p>
-                  <div className="flex gap-2 flex-wrap">
-                    {paciente.terapeutas.map((terapeuta, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {terapeuta}
+                  <div className="mb-4">
+                    <p className="text-sm text-muted-foreground mb-2">Equipe Terapêutica:</p>
+                    <div className="flex gap-2 flex-wrap">
+                      {/* This would need to be fetched from a patient_therapists or similar table */}
+                      <Badge variant="outline" className="text-xs">
+                        Não atribuído
                       </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                {paciente.faltas > 0 && (
-                  <div className="mb-4 p-2 bg-warning/10 border border-warning/20 rounded text-sm">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="h-4 w-4 text-warning" />
-                      <span className="font-medium">{paciente.faltas} falta(s) no mês</span>
                     </div>
                   </div>
-                )}
 
-                <div className="flex gap-2 flex-wrap">
-                  <Button 
-                    size="sm" 
-                    variant="default" 
-                    className="gap-1"
-                    onClick={() => navigate(`/app/pacientes/${paciente.id}`)}
-                  >
-                    <FileText className="h-3 w-3" />
-                    Ver Perfil
-                  </Button>
-                  <Button size="sm" variant="medical" className="gap-1">
-                    <Calendar className="h-3 w-3" />
-                    Agendar
-                  </Button>
-                  <Button size="sm" variant="secondary" className="gap-1">
-                    <Phone className="h-3 w-3" />
-                    Contatar
-                  </Button>
+                  {/* Faltas is mock data */}
+                  {false && (
+                    <div className="mb-4 p-2 bg-warning/10 border border-warning/20 rounded text-sm">
+                      <div className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-warning" />
+                        <span className="font-medium">1 falta(s) no mês</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-2 flex-wrap">
+                    <Button 
+                      size="sm" 
+                      variant="default" 
+                      className="gap-1"
+                      onClick={() => navigate(`/app/pacientes/${paciente.id}`)}
+                    >
+                      <FileText className="h-3 w-3" />
+                      Ver Perfil
+                    </Button>
+                    <Button size="sm" variant="medical" className="gap-1">
+                      <Calendar className="h-3 w-3" />
+                      Agendar
+                    </Button>
+                    <Button size="sm" variant="secondary" className="gap-1">
+                      <Phone className="h-3 w-3" />
+                      Contatar
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

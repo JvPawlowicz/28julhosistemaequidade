@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,104 +18,79 @@ import {
   Target,
   TrendingUp,
   FileImage,
-  ClipboardList
+  ClipboardList,
+  Shield
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import MedicalRecordTabs from "@/components/MedicalRecordTabs";
+import { supabase } from "@/integrations/supabase/client";
+import { usePermissions } from "@/contexts/usePermissions";
+import { useMultiTenant } from "@/contexts/useMultiTenant";
+import { Loading } from "@/components/ui/loading";
+import { EmptyState } from "@/components/EmptyState";
+
+type Patient = Tables<'patients'> & {
+  guardians?: Tables<'guardians'>;
+  units?: Tables<'units'>;
+};
 
 const Prontuarios = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedPaciente, setSelectedPaciente] = useState<any>(null);
+  const [selectedPaciente, setSelectedPaciente] = useState<Patient | null>(null);
   const [isEvolucaoOpen, setIsEvolucaoOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { hasPermission, isAdmin } = usePermissions();
+  const { currentUnit } = useMultiTenant();
 
-  const pacientes = [
-    {
-      id: 1,
-      nome: "João Silva Santos",
-      idade: 12,
-      diagnostico: "TEA - Transtorno do Espectro Autista",
-      responsavel: "Maria Silva",
-      dataInicio: "2023-03-15",
-      status: "ativo"
-    },
-    {
-      id: 2, 
-      nome: "Maria Oliveira Santos",
-      idade: 8,
-      diagnostico: "TDAH - Transtorno do Déficit de Atenção",
-      responsavel: "José Oliveira", 
-      dataInicio: "2023-05-22",
-      status: "ativo"
+  const [pacientes, setPacientes] = useState<Patient[]>([]);
+
+  const fetchPatients = useCallback(async () => {
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('patients')
+        .select(`
+          *,
+          guardians(full_name),
+          units(name)
+        `)
+        .order('full_name', { ascending: true });
+
+      if (!isAdmin() && currentUnit) {
+        query = query.eq('unit_id', currentUnit.id);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      setPacientes(data || []);
+    } catch (error) {
+      console.error('Error fetching patients:', error);
+      toast({
+        title: "Erro ao carregar pacientes",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, [isAdmin, currentUnit, toast]);
 
-  const prontuarioData = {
-    historico: [
-      {
-        data: "2024-01-15",
-        terapeuta: "Dra. Ana Costa",
-        tipo: "Sessão Individual",
-        observacoes: "Paciente demonstrou boa evolução na comunicação verbal. Conseguiu expressar necessidades básicas com palavras simples. Trabalho focado em atenção compartilhada mostrou resultados positivos.",
-        objetivos: ["Aumentar vocabulário funcional", "Melhorar contato visual"],
-        progressos: ["Uso espontâneo de 5 palavras novas", "Mantém contato visual por 10 segundos"]
-      },
-      {
-        data: "2024-01-12", 
-        terapeuta: "TO. Carlos Lima",
-        tipo: "Terapia Ocupacional",
-        observacoes: "Sessão focada em coordenação motora fina. Atividades de encaixe e empilhamento. Paciente mostrou dificuldade inicial mas conseguiu completar tarefas com apoio.",
-        objetivos: ["Desenvolver preensão em pinça", "Melhorar coordenação bilateral"],
-        progressos: ["Conseguiu pegar objetos pequenos", "Empilhou 6 blocos consecutivos"]
-      }
-    ],
-    planoTerapeutico: {
-      objetivoGeral: "Desenvolver habilidades de comunicação, interação social e autonomia para atividades de vida diária",
-      metasLongoPrazo: [
-        "Comunicação funcional com frases de 3-4 palavras",
-        "Interação social com pares de forma espontânea", 
-        "Autonomia para atividades básicas (higiene, alimentação)"
-      ],
-      objetivosCurtoPrazo: [
-        "Ampliar vocabulário para 50 palavras funcionais",
-        "Manter atenção em atividade dirigida por 15 minutos",
-        "Realizar sequência de 3 comandos simples"
-      ],
-      frequencia: "3x por semana - Psicologia e TO",
-      revisao: "2024-04-15"
-    },
-    documentos: [
-      { nome: "Laudo Inicial - Neuropediatra", data: "2023-03-10", tipo: "laudo" },
-      { nome: "Avaliação Psicológica", data: "2023-03-20", tipo: "avaliacao" },
-      { nome: "Relatório TO - 1º Trimestre", data: "2023-06-15", tipo: "relatorio" },
-      { nome: "Fotos - Atividades Lúdicas", data: "2024-01-10", tipo: "imagem" }
-    ],
-    avaliacoes: [
-      {
-        nome: "CARS-2 (Escala de Avaliação do Autismo)",
-        data: "2023-03-20",
-        escore: "32 pontos",
-        classificacao: "Autismo Leve a Moderado",
-        observacoes: "Escores elevados em comunicação e interação social"
-      },
-      {
-        nome: "Vineland-3 (Comportamento Adaptativo)", 
-        data: "2023-06-15",
-        escore: "75 pontos",
-        classificacao: "Moderadamente Baixo",
-        observacoes: "Déficits principalmente em socialização e comunicação"
-      }
-    ]
-  };
+  useEffect(() => {
+    if (hasPermission('prontuarios', 'view')) {
+      fetchPatients();
+    }
+  }, [fetchPatients, hasPermission]);
 
   const filteredPacientes = pacientes.filter(paciente =>
-    paciente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    paciente.diagnostico.toLowerCase().includes(searchTerm.toLowerCase())
+    paciente.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    paciente.diagnosis?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    paciente.guardians?.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSelectPaciente = (paciente: any) => {
+  const handleSelectPaciente = (paciente: Patient) => {
     setSelectedPaciente(paciente);
   };
 
@@ -125,6 +101,30 @@ const Prontuarios = () => {
     });
     setIsEvolucaoOpen(false);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loading />
+      </div>
+    );
+  }
+
+  if (!hasPermission('prontuarios', 'view')) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Card className="text-center p-8">
+          <CardContent>
+            <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Acesso Restrito</h2>
+            <p className="text-muted-foreground">
+              Você não tem permissão para visualizar prontuários.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -142,7 +142,7 @@ const Prontuarios = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <User className="h-5 w-5" />
-              Pacientes
+              Pacientes ({filteredPacientes.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="p-4">
@@ -156,23 +156,32 @@ const Prontuarios = () => {
               />
             </div>
             
-            <div className="space-y-3">
-              {filteredPacientes.map((paciente) => (
-                <div
-                  key={paciente.id}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    selectedPaciente?.id === paciente.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-medical-gray hover:bg-medical-border'
-                  }`}
-                  onClick={() => handleSelectPaciente(paciente)}
-                >
-                  <h4 className="font-medium text-sm">{paciente.nome}</h4>
-                  <p className="text-xs opacity-90">{paciente.idade} anos</p>
-                  <p className="text-xs opacity-75 truncate">{paciente.diagnostico}</p>
-                </div>
-              ))}
-            </div>
+            {filteredPacientes.length === 0 ? (
+              <EmptyState
+                icon={User}
+                title="Nenhum paciente"
+                description="Nenhum paciente encontrado com este filtro."
+                className="p-4"
+              />
+            ) : (
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {filteredPacientes.map((paciente) => (
+                  <div
+                    key={paciente.id}
+                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                      selectedPaciente?.id === paciente.id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-medical-gray hover:bg-medical-border'
+                    }`}
+                    onClick={() => handleSelectPaciente(paciente)}
+                  >
+                    <h4 className="font-medium text-sm">{paciente.full_name}</h4>
+                    <p className="text-xs opacity-90">{paciente.birth_date ? `${new Date().getFullYear() - new Date(paciente.birth_date).getFullYear()} anos` : 'N/A'}</p>
+                    <p className="text-xs opacity-75 truncate">{paciente.diagnosis || 'N/A'}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -185,12 +194,12 @@ const Prontuarios = () => {
                   <div>
                     <CardTitle className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white font-semibold">
-                        {selectedPaciente.nome.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                        {selectedPaciente.full_name?.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
                       </div>
-                      {selectedPaciente.nome}
+                      {selectedPaciente.full_name}
                     </CardTitle>
                     <p className="text-muted-foreground">
-                      {selectedPaciente.idade} anos • {selectedPaciente.diagnostico}
+                      {selectedPaciente.birth_date ? `${new Date().getFullYear() - new Date(selectedPaciente.birth_date).getFullYear()} anos` : 'N/A'} • {selectedPaciente.diagnosis || 'N/A'}
                     </p>
                   </div>
                   
@@ -256,7 +265,7 @@ const Prontuarios = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <MedicalRecordTabs patient={selectedPaciente} />
+                <MedicalRecordTabs patientId={selectedPaciente.id} />
               </CardContent>
             </Card>
           ) : (

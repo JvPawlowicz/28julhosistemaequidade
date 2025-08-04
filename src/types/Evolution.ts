@@ -17,9 +17,10 @@ export interface Evolution {
   professional_id: string;
   signed_at: string;
   status: string;
-  supervisors_signature?: string;
+  supervisors_signature?: Record<string, any> | null; // Changed to match Supabase Json type
   updated_at: string;
   profiles?: {
     full_name: string;
+    requires_supervision?: boolean; // Added for direct access in Evolutions.tsx
   };
 }
