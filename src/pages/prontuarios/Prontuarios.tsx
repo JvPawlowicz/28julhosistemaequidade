@@ -30,10 +30,11 @@ import { usePermissions } from "@/contexts/usePermissions";
 import { useMultiTenant } from "@/contexts/useMultiTenant";
 import { Loading } from "@/components/ui/loading";
 import { EmptyState } from "@/components/EmptyState";
+import { Tables } from "@/integrations/supabase/types"; // Added Tables import
 
 type Patient = Tables<'patients'> & {
-  guardians?: Tables<'guardians'>;
-  units?: Tables<'units'>;
+  guardians?: Pick<Tables<'guardians'>, 'full_name'> | null; // Pick specific columns
+  units?: Pick<Tables<'units'>, 'name'> | null; // Pick specific columns
 };
 
 const Prontuarios = () => {

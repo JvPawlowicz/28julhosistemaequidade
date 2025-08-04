@@ -26,19 +26,18 @@ import {
   Phone,
   Download,
   Play,
-  Brain
+  Brain,
+  Shield // Added Shield import
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { SmartScheduler } from "@/components/SmartScheduler";
 import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
-import { Loading } from "@/components/ui/loading";
-import { EmptyState } from "@/components/EmptyState";
+import { Tables, Enums } from "@/integrations/supabase/types"; // Import Enums
 
 type Appointment = Tables<'appointments'> & {
-  patients?: Tables<'patients'>;
-  profiles?: Tables<'profiles'>;
-  rooms?: Tables<'rooms'>;
+  patients?: Pick<Tables<'patients'>, 'full_name' | 'phone'> | null; // Pick specific columns
+  profiles?: Pick<Tables<'profiles'>, 'full_name'> | null; // Pick specific columns
+  rooms?: Pick<Tables<'rooms'>, 'name'> | null; // Pick specific columns
 };
 
 const Agenda = () => {
@@ -53,8 +52,9 @@ const Agenda = () => {
   const { getUserRole, hasPermission } = usePermissions();
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [therapists, setTherapists] = useState<Tables<'profiles'>[]>([]);
-  const [rooms, setRooms] = useState<Tables<'rooms'>[]>([]);
+  // Define more specific types for therapists and rooms
+  const [therapists, setTherapists] = useState<Array<Pick<Tables<'profiles'>, 'id' | 'full_name' | 'council_type'>>>([]);
+  const [rooms, setRooms] = useState<Array<Pick<Tables<'rooms'>, 'id' | 'name'>>>([]);
 
   const fetchAppointments = useCallback(async () => {
     setLoading(true);
@@ -97,7 +97,8 @@ const Agenda = () => {
   const fetchTherapistsAndRooms = useCallback(async () => {
     try {
       const [{ data: therapistsData, error: therapistsError }, { data: roomsData, error: roomsError }] = await Promise.all([
-        supabase.from('profiles').select('id, full_name, council_type').in('status', ['terapeuta', 'estagiario', 'coordenador']),
+        // Cast status values to Enums<'user_status'> to match the column type
+        supabase.from('profiles').select('id, full_name, council_type').in('status', ['terapeuta', 'estagiario', 'coordenador'] as Enums<'user_status'>[]),
         supabase.from('rooms').select('id, name')
       ]);
 

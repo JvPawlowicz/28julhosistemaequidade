@@ -47,7 +47,8 @@ export const PatientStatsCards: React.FC<PatientStatsCardsProps> = ({ stats, isA
               <p className="text-2xl font-bold">{stats.ativos}</p>
               <p className="text-sm text-muted-foreground">Em Atendimento</p>
             </div>
-          </CardContent>
+          </div>
+        </CardContent>
       </Card>
       <Card>
         <CardContent className="p-4">

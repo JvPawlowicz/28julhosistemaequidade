@@ -5,8 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useMultiTenant } from "@/contexts/MultiTenantContext";
-import { usePermissions } from "@/contexts/PermissionsContext";
+import { useMultiTenant } from "@/contexts/useMultiTenant"; // Corrected import path
+import { usePermissions } from "@/contexts/usePermissions"; // Corrected import path
 import { 
   TrendingUp, 
   TrendingDown,
@@ -191,9 +191,9 @@ export const QualityDashboard = () => {
             </div>
             <div className="mt-2 flex items-center gap-1 text-xs">
               {stats.avgAttendance >= 85 ? (
-                <TrendingUp className="h-3 w-3 text-success" />
+                <TrendingUp className="h-3 w-3" />
               ) : (
-                <TrendingDown className="h-3 w-3 text-destructive" />
+                <TrendingDown className="h-3 w-3" />
               )}
               <span className={stats.avgAttendance >= 85 ? 'text-success' : 'text-destructive'}>
                 Meta: 85%
@@ -213,9 +213,9 @@ export const QualityDashboard = () => {
             </div>
             <div className="mt-2 flex items-center gap-1 text-xs">
               {stats.avgGoalAchievement >= 70 ? (
-                <TrendingUp className="h-3 w-3 text-success" />
+                <TrendingUp className="h-3 w-3" />
               ) : (
-                <TrendingDown className="h-3 w-3 text-destructive" />
+                <TrendingDown className="h-3 w-3" />
               )}
               <span className={stats.avgGoalAchievement >= 70 ? 'text-success' : 'text-destructive'}>
                 Meta: 70%

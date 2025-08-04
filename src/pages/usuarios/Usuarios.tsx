@@ -21,9 +21,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { usePermissions } from "@/contexts/usePermissions";
-import { useMultiTenant } from "@/contexts/useMultiTenant";
-import { Tables } from "@/integrations/supabase/types";
+import { usePermissions } from "@/contexts/usePermissions"; // Corrected import path
+import { useMultiTenant } from "@/contexts/useMultiTenant"; // Corrected import path
+import { Tables, Enums } from "@/integrations/supabase/types"; // Import Enums
 
 type Profile = Tables<'profiles'>;
 type Unit = Tables<'units'>;
@@ -113,7 +113,8 @@ const Usuarios = () => {
     const matchesSearch = user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.council_type?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesRole = filterRole === 'todos' || user.status === filterRole; // Using status as role filter
+    // Cast filterRole to Enums<'user_status'> to match the column type
+    const matchesRole = filterRole === 'todos' || user.status === (filterRole as Enums<'user_status'>); 
     const matchesUnit = filterUnit === 'todas' || user.unit_id === filterUnit;
     return matchesSearch && matchesRole && matchesUnit;
   });

@@ -6,11 +6,11 @@ import { Plus, Shield, Users } from "lucide-react";
 import UnitDataIndicator from "@/components/UnitDataIndicator";
 import { ImportPatientModal } from "@/components/ImportPatientModal";
 import WaitingListModal from "@/components/WaitingListModal";
-import { useMultiTenant } from "@/contexts/useMultiTenant";
-import { usePermissions } from "@/contexts/usePermissions";
+import { useMultiTenant } from "@/contexts/useMultiTenant"; // Corrected import path
+import { usePermissions } from "@/contexts/usePermissions"; // Corrected import path
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
+import { Tables, Enums } from "@/integrations/supabase/types"; // Import Enums
 import { Loading } from "@/components/ui/loading";
 import { EmptyState } from "@/components/EmptyState";
 
@@ -21,8 +21,8 @@ import { PatientListItem } from "@/components/patients/PatientListItem";
 import { NewPatientDialog } from "@/components/patients/NewPatientDialog";
 
 type Patient = Tables<'patients'> & {
-  guardians?: Tables<'guardians'>; // Assuming primary_guardian_id can be joined
-  units?: Tables<'units'>; // Assuming unit_id can be joined
+  guardians?: Pick<Tables<'guardians'>, 'full_name' | 'email' | 'phone'> | null; // Pick specific columns
+  units?: Pick<Tables<'units'>, 'name'> | null; // Pick specific columns
 };
 
 const Pacientes = () => {
@@ -138,7 +138,7 @@ const Pacientes = () => {
           phone: newPatientData.phone,
           diagnosis: newPatientData.diagnosis,
           unit_id: newPatientData.unit_id,
-          status: newPatientData.status,
+          status: newPatientData.status as Enums<'user_status'>, // Cast to correct enum type
           primary_guardian_id: guardianData.id,
         })
         .select(`

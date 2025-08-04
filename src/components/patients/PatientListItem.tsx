@@ -2,11 +2,11 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, FileText, Phone, Mail, MapPin, AlertCircle } from "lucide-react";
-import { Tables } from "@/integrations/supabase/types";
+import { Tables, Enums } from "@/integrations/supabase/types"; // Import Enums
 
 type Patient = Tables<'patients'> & {
-  guardians?: Tables<'guardians'>;
-  units?: Tables<'units'>;
+  guardians?: Pick<Tables<'guardians'>, 'full_name' | 'email' | 'phone'> | null; // Pick specific columns
+  units?: Pick<Tables<'units'>, 'name'> | null; // Pick specific columns
 };
 
 interface PatientListItemProps {
@@ -15,7 +15,7 @@ interface PatientListItemProps {
 }
 
 export const PatientListItem: React.FC<PatientListItemProps> = ({ patient, onViewProfile }) => {
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: Enums<'user_status'> | string) => { // Use Enums<'user_status'>
     switch (status) {
       case 'ativo': return 'bg-success text-success-foreground';
       case 'triagem': return 'bg-warning text-warning-foreground';

@@ -21,7 +21,8 @@ import {
   Shield,
   AlertCircle,
   Calculator,
-  FileImage
+  FileImage,
+  Eye // Added Eye import
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -32,6 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Loading } from "@/components/ui/loading";
 import { EmptyState } from "./EmptyState";
+import { Progress } from "@/components/ui/progress"; // Added Progress import
 
 interface MedicalRecordTabsProps {
   patientId: string;
@@ -285,9 +287,7 @@ const MedicalRecordTabs = ({ patientId }: MedicalRecordTabsProps) => {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Badge variant="outline">
-                      {evaluation.status}
-                    </Badge>
+                    {/* Removed status badge as 'status' is not in evaluations table */}
                     <span className="text-sm text-muted-foreground">
                       {new Date(evaluation.evaluation_date).toLocaleDateString('pt-BR')}
                     </span>

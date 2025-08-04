@@ -25,12 +25,12 @@ import {
   Plus
 } from "lucide-react";
 import type { Evolution } from "../../types/Evolution";
-import { Tables } from "@/integrations/supabase/types";
+import { Tables, Enums } from "@/integrations/supabase/types"; // Import Enums
 import { Loading } from "@/components/ui/loading";
 
 type Patient = Tables<'patients'> & {
-  guardians?: Tables<'guardians'>;
-  units?: Tables<'units'>;
+  guardians?: Pick<Tables<'guardians'>, 'full_name' | 'email' | 'phone' | 'address'> | null; // Pick specific columns
+  units?: Pick<Tables<'units'>, 'name'> | null; // Pick specific columns
 };
 
 const PatientProfile = () => {
