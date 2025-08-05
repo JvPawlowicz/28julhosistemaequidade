@@ -18,10 +18,11 @@ import { AgendaWeekView } from "@/components/agenda/AgendaWeekView";
 import { AgendaLegend } from "@/components/agenda/AgendaLegend";
 import { NewAppointmentDialog } from "@/components/agenda/NewAppointmentDialog";
 import { Shield } from "lucide-react"; // Import Shield for restricted access
+import { UnitDataIndicator } from "@/components/UnitDataIndicator";
 
 type Appointment = Tables<'appointments'> & {
   patients?: Pick<Tables<'patients'>, 'full_name' | 'phone'> | null;
-  profiles?: Pick<Tables<'profiles'>, 'full_name'> | null;
+  profiles?: { full_name: string } | null;
   rooms?: Pick<Tables<'rooms'>, 'name'> | null;
 };
 
@@ -35,8 +36,8 @@ const Agenda = () => {
   const [isNewAppointmentDialogOpen, setIsNewAppointmentDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { currentUnit, isAdmin } = useMultiTenant();
-  const { getUserRole, hasPermission } = usePermissions();
+  const { currentUnit } = useMultiTenant();
+  const { getUserRole, hasPermission, isAdmin } = usePermissions();
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [therapists, setTherapists] = useState<Array<Pick<Tables<'profiles'>, 'id' | 'full_name' | 'council_type'>>>([]);
@@ -98,7 +99,11 @@ const Agenda = () => {
       const { data, error } = await query;
 
       if (error) throw error;
-      setAppointments(data || []);
+      const formattedData = (data || []).map(d => ({
+        ...d,
+        profiles: Array.isArray(d.profiles) ? d.profiles[0] : d.profiles,
+      }));
+      setAppointments(formattedData as Appointment[]);
     } catch (error) {
       console.error('Error fetching appointments:', error);
       toast({
@@ -114,7 +119,7 @@ const Agenda = () => {
   const fetchTherapistsRoomsAndPatients = useCallback(async () => {
     try {
       const [{ data: therapistsData, error: therapistsError }, { data: roomsData, error: roomsError }, { data: patientsData, error: patientsError }] = await Promise.all([
-        supabase.from('profiles').select('id, full_name, council_type').in('status', ['terapeuta', 'estagiario', 'coordenador'] as Enums<'user_status'>[]),
+        supabase.from('profiles').select('id, full_name, council_type').in('status', ['ativo']),
         supabase.from('rooms').select('id, name'),
         supabase.from('patients').select('id, full_name'),
       ]);

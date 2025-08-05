@@ -3,6 +3,7 @@ import AdminDashboard from "./dashboards/AdminDashboard";
 import TerapeutaDashboard from "./dashboards/TerapeutaDashboard";
 import RecepcaoDashboard from "./dashboards/RecepcaoDashboard";
 import ResponsavelDashboard from "./dashboards/ResponsavelDashboard";
+import { Loading } from "@/components/ui/loading";
 
 const Dashboard = () => {
   const { getUserRole } = usePermissions();
@@ -22,9 +23,8 @@ const Dashboard = () => {
       return <ResponsavelDashboard />;
     default:
       return (
-        <div className="text-center">
-          <h1 className="text-2xl font-bold">Bem-vindo ao Sistema Equidade</h1>
-          <p className="text-muted-foreground">Carregando seu painel...</p>
+        <div className="flex items-center justify-center h-full">
+          <Loading />
         </div>
       );
   }

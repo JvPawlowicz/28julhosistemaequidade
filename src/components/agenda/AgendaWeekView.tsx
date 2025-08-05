@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { Tables } from "@/integrations/supabase/types";
 import { format, addDays, startOfWeek } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Calendar } from 'lucide-react';
 
 type Appointment = Tables<'appointments'> & {
   patients?: Pick<Tables<'patients'>, 'full_name' | 'phone'> | null;

@@ -160,18 +160,7 @@ const Layout = () => {
       </div>
 
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
-        {currentNavItems.map((item, index) => {
-          if (item.separator) {
-            return (
-              <div key={index} className="py-2">
-                <div className="text-xs font-medium text-muted-foreground px-2 pb-2 border-b border-medical-border">
-                  {item.label}
-                </div>
-              </div>
-            );
-          }
-          
-          return (
+        {currentNavItems.map((item) => (
             <Button
               key={item.path}
               variant={location.pathname === item.path ? "default" : "ghost"}
@@ -184,8 +173,8 @@ const Layout = () => {
               <item.icon className="h-5 w-5" />
               {item.label}
             </Button>
-          );
-        })}
+          )
+        )}
       </nav>
 
       <div className="p-4 border-t border-medical-border">

@@ -12,8 +12,8 @@ interface AgendaHeaderProps {
 }
 
 export const AgendaHeader: React.FC<AgendaHeaderProps> = ({ onNewAppointmentClick }) => {
-  const { currentUnit, isAdmin } = useMultiTenant();
-  const { getUserRole } = usePermissions();
+  const { currentUnit } = useMultiTenant();
+  const { getUserRole, isAdmin } = usePermissions();
   const [showSmartScheduler, setShowSmartScheduler] = React.useState(false);
 
   return (

@@ -30,8 +30,8 @@ const Pacientes = () => {
   const [filterStatus, setFilterStatus] = useState("todos");
   const [isNewPatientDialogOpen, setIsNewPatientDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const { currentUnit, isAdmin, availableUnits } = useMultiTenant();
-  const { hasPermission } = usePermissions();
+  const { currentUnit, availableUnits } = useMultiTenant();
+  const { hasPermission, isAdmin } = usePermissions();
 
   const [patients, setPatients] = useState<Patient[]>([]);
   const [newPatientData, setNewPatientData] = useState({

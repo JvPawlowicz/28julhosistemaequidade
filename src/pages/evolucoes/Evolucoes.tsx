@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import EvolutionNotifications from "@/components/EvolutionNotifications";
 import EvolutionAdendum from "@/components/EvolutionAdendum";
 import { Loading } from "@/components/ui/loading";
+import { Badge } from "@/components/ui/badge";
 
 // Import new modular components
 import { EvolutionHeader } from "@/components/evolutions/EvolutionHeader";
@@ -33,14 +34,10 @@ interface Appointment {
   status: string;
 }
 
-interface Professional {
+interface UserProfile {
   id: string;
   full_name: string;
-  email: string;
-  role: string;
-  specialty: string;
-  units: string[];
-  requires_supervision: boolean;
+  requires_supervision: boolean | null;
 }
 
 const Evolucoes = () => {
@@ -55,7 +52,7 @@ const Evolucoes = () => {
   const [loading, setLoading] = useState(true);
   
   const [evolutions, setEvolutions] = useState<Evolution[]>([]);
-  const [userProfiles, setUserProfiles] = useState<Professional[]>([]);
+  const [userProfiles, setUserProfiles] = useState<UserProfile[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [realizedAppointments, setRealizedAppointments] = useState<Appointment[]>([]);
   

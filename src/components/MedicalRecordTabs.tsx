@@ -40,7 +40,7 @@ interface MedicalRecordTabsProps {
 }
 
 type PatientDocument = Tables<'patient_documents'>;
-type Evaluation = Tables<'evaluations'> & { status: string | null }; // Added status to Evaluation type
+type Evaluation = Tables<'evaluations'>;
 type TherapyGoal = Tables<'therapy_goals'>;
 
 const MedicalRecordTabs = ({ patientId }: MedicalRecordTabsProps) => {

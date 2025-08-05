@@ -4,11 +4,7 @@ import { useAuth } from "./useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables, Enums } from '@/integrations/supabase/types';
 
-export interface Unit {
-  id: string;
-  name: string;
-  address: string;
-  phone: string;
+export interface Unit extends Tables<'units'> {
   active: boolean;
   settings: {
     workingHours: { start: string; end: string };
@@ -56,10 +52,7 @@ export const MultiTenantProvider = ({ children }: MultiTenantProviderProps) => {
         .select('*');
       if (!error && data) {
         const formattedUnits: Unit[] = data.map(unit => ({
-          id: unit.id,
-          name: unit.name,
-          address: unit.address || '',
-          phone: unit.phone || '',
+          ...unit,
           active: true, // Assuming all fetched units are active for now
           settings: { // Mock settings as they are not in the units table schema
             workingHours: { start: "08:00", end: "18:00" },
@@ -82,7 +75,7 @@ export const MultiTenantProvider = ({ children }: MultiTenantProviderProps) => {
         // Fetch profile data
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('id, full_name, email, requires_supervision, unit_id')
+          .select('id, full_name, email, requires_supervision, unit_id, status, council_type')
           .eq('user_id', user.id)
           .single();
 

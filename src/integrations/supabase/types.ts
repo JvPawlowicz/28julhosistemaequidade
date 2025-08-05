@@ -130,11 +130,13 @@ export type Database = {
           evaluation_type: string
           evaluator_id: string
           id: string
+          observations: string | null
           patient_id: string
           protocol_used: string | null
           recommendations: string | null
           results: Json | null
           specialty: Database["public"]["Enums"]["specialty"]
+          status: string | null
           updated_at: string
         }
         Insert: {
@@ -143,11 +145,13 @@ export type Database = {
           evaluation_type: string
           evaluator_id: string
           id?: string
+          observations?: string | null
           patient_id: string
           protocol_used?: string | null
           recommendations?: string | null
           results?: Json | null
           specialty: Database["public"]["Enums"]["specialty"]
+          status?: string | null
           updated_at?: string
         }
         Update: {
@@ -156,11 +160,13 @@ export type Database = {
           evaluation_type?: string
           evaluator_id?: string
           id?: string
+          observations?: string | null
           patient_id?: string
           protocol_used?: string | null
           recommendations?: string | null
           results?: Json | null
           specialty?: Database["public"]["Enums"]["specialty"]
+          status?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -530,6 +536,7 @@ export type Database = {
           primary_guardian_id: string | null
           rg: string | null
           school: string | null
+          status: string | null
           unit_id: string | null
           updated_at: string
         }
@@ -547,6 +554,7 @@ export type Database = {
           primary_guardian_id?: string | null
           rg?: string | null
           school?: string | null
+          status?: string | null
           unit_id?: string | null
           updated_at?: string
         }
@@ -564,6 +572,7 @@ export type Database = {
           primary_guardian_id?: string | null
           rg?: string | null
           school?: string | null
+          status?: string | null
           unit_id?: string | null
           updated_at?: string
         }

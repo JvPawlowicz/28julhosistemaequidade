@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMultiTenant } from "@/contexts/useMultiTenant";
+import type { Unit } from "@/contexts/MultiTenantContext";
 import { Tables } from "@/integrations/supabase/types";
 import { showSuccess, showError } from '@/utils/notifications';
 
@@ -27,7 +28,7 @@ interface NewPatientDialogProps {
   newPatient: NewPatientData;
   setNewPatient: React.Dispatch<React.SetStateAction<NewPatientData>>;
   onCreatePatient: () => void;
-  availableUnits: Tables<'units'>[];
+  availableUnits: Unit[];
   isAdmin: boolean;
 }
 
