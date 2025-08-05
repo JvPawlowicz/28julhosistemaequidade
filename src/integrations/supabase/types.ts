@@ -256,6 +256,7 @@ export type Database = {
           phone: string | null
           relationship: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -268,6 +269,7 @@ export type Database = {
           phone?: string | null
           relationship?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -280,8 +282,17 @@ export type Database = {
           phone?: string | null
           relationship?: string | null
           updated_at?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "guardians_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       insurance_plans: {
         Row: {
@@ -1089,6 +1100,7 @@ export type Database = {
         | "terapeuta"
         | "estagiario"
         | "recepcao"
+        | "responsavel"
       appointment_status:
         | "agendado"
         | "confirmado"
