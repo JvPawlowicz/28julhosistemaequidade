@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { createContext, useContext, ReactNode } from "react";
 import { useMultiTenant } from "./useMultiTenant";
 
 export interface Permission {
@@ -177,10 +176,10 @@ interface PermissionsContextType {
   requiresSupervision: () => boolean;
 }
 
-const PermissionsContext = createContext<PermissionsContextType | null>(null);
+const PermissionsContext = React.createContext<PermissionsContextType | null>(null);
 
 interface PermissionsProviderProps {
-  children: ReactNode;
+  children: React.ReactNode;
 }
 
 export const PermissionsProvider = ({ children }: PermissionsProviderProps) => {

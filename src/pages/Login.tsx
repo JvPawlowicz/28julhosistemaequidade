@@ -1,5 +1,4 @@
 import * as React from 'react';
-import { createContext, useContext, useEffect, useState } from 'react';
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,9 +36,9 @@ const Login = () => {
   const { type } = useParams();
   const { signIn, signUp, loading } = useAuthActions();
 
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [parentData, setParentData] = useState({ cpf: "", birthDate: "" });
+  const [isSignUp, setIsSignUp] = React.useState(false);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const [parentData, setParentData] = React.useState({ cpf: "", birthDate: "" });
 
   // React Hook Form + Zod para validação
   const {
