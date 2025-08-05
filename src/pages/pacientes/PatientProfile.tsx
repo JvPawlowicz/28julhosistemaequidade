@@ -27,6 +27,7 @@ import {
 import type { Evolution } from "../../types/Evolution";
 import { Tables, Enums } from "@/integrations/supabase/types";
 import { Loading } from "@/components/ui/loading";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 type Patient = Tables<'patients'> & {
   guardians?: Pick<Tables<'guardians'>, 'full_name' | 'email' | 'phone' | 'address'> | null;
@@ -171,6 +172,24 @@ const PatientProfile = () => {
             Agendar
           </Button>
         </div>
+      </div>
+
+      {/* Alertas de Risco */}
+      <div className="space-y-2">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Risco de Fuga (Alto)</AlertTitle>
+          <AlertDescription>
+            Paciente tem histórico de tentativas de fuga. Acompanhamento constante necessário em áreas abertas.
+          </AlertDescription>
+        </Alert>
+        <Alert variant="warning">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Alergia a Amendoim (Médio)</AlertTitle>
+          <AlertDescription>
+            Evitar qualquer alimento que contenha amendoim ou traços.
+          </AlertDescription>
+        </Alert>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">

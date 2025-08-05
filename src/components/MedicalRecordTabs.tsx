@@ -22,7 +22,9 @@ import {
   AlertCircle,
   Calculator,
   FileImage,
-  Eye // Added Eye import
+  Eye,
+  MessageSquare,
+  BarChart3
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -33,7 +35,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { Loading } from "@/components/ui/loading";
 import { EmptyState } from "./EmptyState";
-import { Progress } from "@/components/ui/progress"; // Added Progress import
+import { Progress } from "@/components/ui/progress";
 
 interface MedicalRecordTabsProps {
   patientId: string;
@@ -144,15 +146,17 @@ const MedicalRecordTabs = ({ patientId }: MedicalRecordTabsProps) => {
 
   return (
     <Tabs defaultValue="evolutions" className="w-full">
-      <TabsList className="grid w-full grid-cols-4">
+      <TabsList className="grid w-full grid-cols-6">
         <TabsTrigger value="evolutions">Evoluções ({evolutions.length})</TabsTrigger>
-        <TabsTrigger value="goals">Objetivos ({therapyGoals.length})</TabsTrigger>
+        <TabsTrigger value="goals">Plano Terapêutico ({therapyGoals.length})</TabsTrigger>
         <TabsTrigger value="evaluations">Avaliações ({evaluations.length})</TabsTrigger>
         <TabsTrigger value="documents">Documentos ({documents.length})</TabsTrigger>
+        <TabsTrigger value="communication">Comunicação</TabsTrigger>
+        <TabsTrigger value="progress">Progresso</TabsTrigger>
       </TabsList>
 
       {/* Evoluções */}
-      <TabsContent value="evolutions" className="space-y-4">
+      <TabsContent value="evolutions" className="space-y-4 mt-4">
         {evolutions.length === 0 ? (
           <EmptyState
             icon={FileText}
@@ -201,7 +205,6 @@ const MedicalRecordTabs = ({ patientId }: MedicalRecordTabsProps) => {
                     <Eye className="h-3 w-3" />
                     Visualizar Completo
                   </Button>
-                  {/* Add more actions based on permissions */}
                 </div>
               </CardContent>
             </Card>
@@ -209,8 +212,8 @@ const MedicalRecordTabs = ({ patientId }: MedicalRecordTabsProps) => {
         )}
       </TabsContent>
 
-      {/* Objetivos Terapêuticos */}
-      <TabsContent value="goals" className="space-y-4">
+      {/* Plano Terapêutico (Objetivos) */}
+      <TabsContent value="goals" className="space-y-4 mt-4">
         {therapyGoals.length === 0 ? (
           <EmptyState
             icon={Target}
@@ -265,7 +268,7 @@ const MedicalRecordTabs = ({ patientId }: MedicalRecordTabsProps) => {
       </TabsContent>
 
       {/* Avaliações */}
-      <TabsContent value="evaluations" className="space-y-4">
+      <TabsContent value="evaluations" className="space-y-4 mt-4">
         {evaluations.length === 0 ? (
           <EmptyState
             icon={Calculator}
@@ -287,7 +290,7 @@ const MedicalRecordTabs = ({ patientId }: MedicalRecordTabsProps) => {
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    {evaluation.status && ( // Conditionally render status badge if status exists
+                    {evaluation.status && (
                       <Badge className={getStatusColor(evaluation.status)}>
                         {evaluation.status}
                       </Badge>
@@ -317,7 +320,7 @@ const MedicalRecordTabs = ({ patientId }: MedicalRecordTabsProps) => {
       </TabsContent>
 
       {/* Documentos */}
-      <TabsContent value="documents" className="space-y-4">
+      <TabsContent value="documents" className="space-y-4 mt-4">
         {documents.length === 0 ? (
           <EmptyState
             icon={FileImage}
@@ -355,6 +358,40 @@ const MedicalRecordTabs = ({ patientId }: MedicalRecordTabsProps) => {
             </Card>
           ))
         )}
+      </TabsContent>
+
+      {/* Comunicação Interna */}
+      <TabsContent value="communication" className="mt-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5" />
+              Comentários da Equipe
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Funcionalidade de comunicação interna da equipe será implementada aqui.
+            </p>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      {/* Progresso (Gráficos) */}
+      <TabsContent value="progress" className="mt-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5" />
+              Gráficos de Progresso
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              Gráficos visuais mostrando a evolução das metas e outros indicadores serão implementados aqui.
+            </p>
+          </CardContent>
+        </Card>
       </TabsContent>
     </Tabs>
   );
