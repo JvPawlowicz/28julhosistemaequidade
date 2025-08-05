@@ -16,55 +16,34 @@ import {
   Users,
   Calendar,
   Activity,
-  Power
+  Power,
+  Briefcase,
+  Home
 } from "lucide-react";
 
 const Landing = () => {
   const navigate = useNavigate();
 
-  const beneficios = [
-    {
-      icon: Clock,
-      titulo: "Tempo e produtividade",
-      descricao: "Reduza o desperdício de tempo com cadastros em papel e falta de organização"
-    },
-    {
-      icon: FileText,
-      titulo: "Informações organizadas", 
-      descricao: "Todas informações dos pacientes e atendimentos em um só lugar e com fácil acesso"
-    },
-    {
-      icon: BarChart3,
-      titulo: "Gestão e resultados",
-      descricao: "Sem perda de tempo com burocracia e foco em processos e atividades"
-    },
-    {
-      icon: Smartphone,
-      titulo: "Prático e acessível",
-      descricao: "Sistema muito simples de ser utilizado e acessível de qualquer local ou dispositivo"
-    }
-  ];
-
   const funcionalidades = [
     {
       icon: Users,
       titulo: "Gestão de Pacientes",
-      descricao: "Cadastro completo e prontuários digitais"
+      descricao: "Cadastro completo, prontuários digitais e informações centralizadas."
     },
     {
       icon: Calendar,
       titulo: "Agenda Inteligente",
-      descricao: "Agendamento e controle de consultas"
+      descricao: "Agendamento, controle de consultas e visualização por equipe ou unidade."
     },
     {
-      icon: Activity,
-      titulo: "Relatórios Completos",
-      descricao: "Analytics e métricas de performance"
+      icon: FileText,
+      titulo: "Evoluções Clínicas",
+      descricao: "Registro padronizado do progresso terapêutico com validade jurídica."
     },
     {
-      icon: Shield,
-      titulo: "Segurança Total",
-      descricao: "Dados protegidos e conformidade LGPD"
+      icon: BarChart3,
+      titulo: "Relatórios e Análises",
+      descricao: "Dashboards com métricas de performance para uma gestão baseada em dados."
     }
   ];
 
@@ -79,7 +58,7 @@ const Landing = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold text-primary">Equidade+</h1>
-              <p className="text-sm text-muted-foreground">Gestão Clínica Inteligente</p>
+              <p className="text-sm text-muted-foreground">Sistema de Gestão Clínica</p>
             </div>
           </div>
           
@@ -89,7 +68,7 @@ const Landing = () => {
               <span className="text-sm font-medium text-success">Sistema Operacional</span>
             </div>
             <Button variant="outline" onClick={() => navigate("/login")}>
-              Entrar
+              Acessar o Sistema
             </Button>
           </div>
         </div>
@@ -107,74 +86,57 @@ const Landing = () => {
               </h2>
               
               <p className="text-xl text-muted-foreground mb-8">
-                O Equidade+ oferece gestão completa para clínicas multidisciplinares, 
-                centros de reabilitação e serviços especializados. Uma plataforma acolhedora 
-                que conecta profissionais, famílias e pessoas atendidas em um cuidado integrado.
+                O Equidade+ é uma plataforma de gestão para clínicas multidisciplinares, 
+                centros de reabilitação e serviços especializados, conectando profissionais, 
+                famílias e pessoas atendidas em um cuidado integrado.
               </p>
             </div>
 
             <div className="grid grid-cols-1 gap-6 max-w-lg mx-auto">
-              <Card className="border-2 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer group">
+              <Card className="border-2 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer group" onClick={() => navigate("/login/professional")}>
                 <CardContent className="p-8 text-center">
                   <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                    <Shield className="h-8 w-8 text-primary-foreground" />
+                    <Briefcase className="h-8 w-8 text-primary-foreground" />
                   </div>
-                  <h3 className="text-xl font-bold text-primary mb-2">Acesso Profissionais</h3>
+                  <h3 className="text-xl font-bold text-primary mb-2">Acesso Profissional</h3>
                   <p className="text-muted-foreground text-sm mb-4">
-                    Para fisioterapeutas, terapeutas ocupacionais, fonoaudiólogos, psicólogos e equipe multidisciplinar
+                    Para fisioterapeutas, terapeutas ocupacionais, fonoaudiólogos, psicólogos e equipe multidisciplinar.
                   </p>
                   <Button 
                     size="lg"
                     className="w-full h-12 text-lg"
-                    onClick={() => navigate("/login/professional")}
                   >
                     Entrar como Profissional
                   </Button>
                 </CardContent>
               </Card>
 
-              <Card className="border-2 border-secondary/20 hover:border-secondary/40 transition-colors cursor-pointer group">
+              <Card className="border-2 border-secondary/20 hover:border-secondary/40 transition-colors cursor-pointer group" onClick={() => navigate("/login/parent")}>
                 <CardContent className="p-8 text-center">
                   <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                    <Heart className="h-8 w-8 text-secondary-foreground" />
+                    <Home className="h-8 w-8 text-secondary-foreground" />
                   </div>
                   <h3 className="text-xl font-bold text-secondary mb-2">Portal das Famílias</h3>
                   <p className="text-muted-foreground text-sm mb-4">
-                    Para familiares acompanharem o desenvolvimento e terapias de seus entes queridos
+                    Para familiares acompanharem o desenvolvimento e as terapias de seus entes queridos.
                   </p>
                   <Button 
                     size="lg"
                     variant="secondary"
                     className="w-full h-12 text-lg"
-                    onClick={() => navigate("/login/parent")}
                   >
                     Entrar como Responsável
                   </Button>
                 </CardContent>
               </Card>
             </div>
-
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-success" />
-                <span>Teste grátis por 15 dias</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-success" />
-                <span>Sem compromisso</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4 text-success" />
-                <span>Suporte incluído</span>
-              </div>
-            </div>
           </div>
 
           <div className="relative">
-            <div className="bg-card border rounded-2xl shadow-2xl p-8 transform rotate-3 hover:rotate-0 transition-transform duration-300">
+            <div className="bg-card border rounded-2xl shadow-2xl p-8">
               <div className="bg-gradient-to-r from-primary to-secondary rounded-xl p-6 text-primary-foreground mb-6">
                 <h3 className="text-2xl font-bold mb-2">Dashboard Inteligente</h3>
-                <p className="opacity-90">Visão completa da sua clínica em tempo real</p>
+                <p className="opacity-90">Visão completa da sua clínica em tempo real.</p>
               </div>
               
               <div className="space-y-4">
@@ -196,30 +158,46 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Benefícios */}
+      {/* Plataforma Unificada */}
       <section className="bg-muted py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-bold text-primary mb-4">
-              Por que escolher o Equidade+?
+              Uma Plataforma Unificada para o Cuidado
             </h3>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Transforme sua gestão clínica com tecnologia de ponta e foque no que realmente importa: o cuidado dos seus pacientes.
+              Ferramentas projetadas para cada perfil, garantindo uma experiência integrada e eficiente para todos.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {beneficios.map((beneficio, index) => (
-              <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
-                <CardContent className="p-8 text-center">
-                  <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                    <beneficio.icon className="h-8 w-8 text-primary-foreground" />
-                  </div>
-                  <h4 className="text-xl font-bold text-primary mb-4">{beneficio.titulo}</h4>
-                  <p className="text-muted-foreground">{beneficio.descricao}</p>
-                </CardContent>
-              </Card>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Briefcase className="h-8 w-8 text-primary-foreground" />
+                </div>
+                <h4 className="text-xl font-bold text-primary mb-4">Para Profissionais</h4>
+                <p className="text-muted-foreground">Centralize prontuários, evoluções e planos terapêuticos. Colabore com a equipe e otimize sua rotina.</p>
+              </CardContent>
+            </Card>
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Home className="h-8 w-8 text-secondary-foreground" />
+                </div>
+                <h4 className="text-xl font-bold text-secondary mb-4">Para Famílias</h4>
+                <p className="text-muted-foreground">Acompanhe o progresso, acesse relatórios e comunique-se de forma segura com a equipe terapêutica.</p>
+              </CardContent>
+            </Card>
+            <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow">
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-primary/80 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <BarChart3 className="h-8 w-8 text-primary-foreground" />
+                </div>
+                <h4 className="text-xl font-bold text-primary/80 mb-4">Para Gestores</h4>
+                <p className="text-muted-foreground">Tenha uma visão completa da operação, com dados para uma gestão eficiente e focada na qualidade.</p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -229,10 +207,10 @@ const Landing = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-bold text-primary mb-4">
-              Funcionalidades Completas
+              Recursos Essenciais
             </h3>
             <p className="text-xl text-muted-foreground">
-              Tudo que você precisa para gerenciar sua clínica de forma profissional
+              Tudo que você precisa para gerenciar sua clínica de forma profissional.
             </p>
           </div>
 
@@ -250,30 +228,6 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="bg-gradient-to-r from-primary to-secondary py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h3 className="text-4xl font-bold text-primary-foreground mb-6">
-            Pronto para revolucionar sua gestão clínica?
-          </h3>
-          <p className="text-xl text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
-            Junte-se a centenas de profissionais que já transformaram sua prática com o Equidade+
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center max-w-md mx-auto">
-            <Button 
-              size="lg"
-              variant="secondary"
-              className="flex-1 h-14 text-lg gap-3"
-              onClick={() => navigate("/login")}
-            >
-              <Shield className="h-5 w-5" />
-              Começar Agora
-            </Button>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className="bg-primary text-primary-foreground py-12">
         <div className="container mx-auto px-4">
@@ -284,7 +238,7 @@ const Landing = () => {
                 <span className="text-2xl font-bold">Equidade+</span>
               </div>
               <p className="text-primary-foreground/80 mb-4">
-                Sistema de gestão clínica mais completo do Brasil.
+                Sistema de gestão clínica para um cuidado integrado e eficiente.
               </p>
               <p className="text-sm text-primary-foreground/60">
                 Desenvolvido por Humexa 2025
