@@ -1,5 +1,12 @@
 import { Enums } from "./enums"
-import { Json } from "./helpers"
+
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 // Individual Table Type Definitions
 type AbaProtocols = {
