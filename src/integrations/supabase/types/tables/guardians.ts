@@ -38,13 +38,5 @@ export type Guardians = {
     updated_at?: string
     user_id?: string | null
   }
-  Relationships: [
-    {
-      foreignKeyName: "guardians_user_id_fkey"
-      columns: ["user_id"]
-      isOneToOne: true
-      referencedRelation: "users"
-      referencedColumns: ["id"]
-    },
-  ]
+  Relationships: []
 }

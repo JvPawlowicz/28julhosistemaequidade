@@ -65,6 +65,13 @@ export type Appointments = {
       referencedColumns: ["id"]
     },
     {
+      foreignKeyName: "appointments_therapist_id_fkey"
+      columns: ["therapist_id"]
+      isOneToOne: false
+      referencedRelation: "profiles"
+      referencedColumns: ["id"]
+    },
+    {
       foreignKeyName: "appointments_unit_id_fkey"
       columns: ["unit_id"]
       isOneToOne: false

@@ -36,7 +36,7 @@ const EvolutionNotifications = () => {
           appointment_date,
           start_time,
           specialty,
-          patients!appointments_patient_id_fkey(full_name)
+          patients(full_name)
         `)
         .eq('therapist_id', user.id)
         .eq('status', 'realizado')
