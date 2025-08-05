@@ -1093,6 +1093,7 @@ export type Database = {
         | "agendado"
         | "confirmado"
         | "realizado"
+        | "compareceu"
         | "falta"
         | "cancelado"
       evolution_status: "Rascunho" | "Pendente de Supervisão" | "Finalizada"
@@ -1235,7 +1236,8 @@ export const Constants = {
       appointment_status: [
         "agendado",
         "confirmado",
-        "realizado",
+"realizado",
+        "compareceu",
         "falta",
         "cancelado",
       ],

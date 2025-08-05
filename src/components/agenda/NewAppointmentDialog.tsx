@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
@@ -50,6 +51,12 @@ export const NewAppointmentDialog: React.FC<NewAppointmentDialogProps> = ({
     notes: '',
   });
   const [loading, setLoading] = React.useState(false);
+  const [isRecurring, setIsRecurring] = React.useState(false);
+  const [recurrence, setRecurrence] = React.useState({
+    frequency: 'weekly',
+    interval: 1,
+    endDate: ''
+  });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
@@ -78,6 +85,12 @@ export const NewAppointmentDialog: React.FC<NewAppointmentDialogProps> = ({
 
     setLoading(true);
     try {
+      if (isRecurring) {
+        console.log("Criando agendamento recorrente:", { formData, recurrence });
+        // A lógica para criar múltiplos agendamentos seria implementada aqui.
+        // Por enquanto, criaremos apenas o primeiro agendamento da série.
+      }
+
       const { error } = await supabase
         .from('appointments')
         .insert({
@@ -198,6 +211,35 @@ export const NewAppointmentDialog: React.FC<NewAppointmentDialogProps> = ({
             <Label htmlFor="notes">Observações</Label>
             <Input id="notes" value={formData.notes} onChange={handleInputChange} placeholder="Notas sobre o agendamento" />
           </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch id="recurring" checked={isRecurring} onCheckedChange={setIsRecurring} />
+            <Label htmlFor="recurring">Agendamento Recorrente</Label>
+          </div>
+
+          {isRecurring && (
+            <div className="grid grid-cols-3 gap-4 p-4 border rounded-lg">
+              <div>
+                <Label>Frequência</Label>
+                <Select value={recurrence.frequency} onValueChange={(value) => setRecurrence(prev => ({ ...prev, frequency: value }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="daily">Diário</SelectItem>
+                    <SelectItem value="weekly">Semanal</SelectItem>
+                    <SelectItem value="monthly">Mensal</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>A cada</Label>
+                <Input type="number" value={recurrence.interval} onChange={(e) => setRecurrence(prev => ({ ...prev, interval: parseInt(e.target.value) || 1 }))} />
+              </div>
+              <div>
+                <Label>Até</Label>
+                <Input type="date" value={recurrence.endDate} onChange={(e) => setRecurrence(prev => ({ ...prev, endDate: e.target.value }))} />
+              </div>
+            </div>
+          )}
 
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={loading}>
