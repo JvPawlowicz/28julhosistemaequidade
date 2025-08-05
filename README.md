@@ -124,3 +124,4 @@ Pronto para produção!
 # equidademaisv1
 # 28julhosistemaequidade
 # Sistemaequidade-v1-agosto-2025-
+# Sistemaequidade-v1-agosto-2025-
