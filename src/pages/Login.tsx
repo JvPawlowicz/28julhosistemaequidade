@@ -12,10 +12,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { showSuccess, showError } from '@/utils/notifications';
 
 const loginSchema = z.object({
-  fullName: z.string().min(3, "Nome obrigatório").optional(),
   email: z.string().email("E-mail inválido"),
-  password: z.string().min(6, "Mínimo 6 caracteres"),
-  confirmPassword: z.string().optional()
+  password: z.string().min(1, "Senha é obrigatória"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -23,42 +21,26 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const Login = () => {
   const navigate = useNavigate();
   const { type } = useParams();
-  const { signIn, signUp, loading } = useAuthActions();
+  const { signIn, loading } = useAuthActions();
 
-  const [isSignUp, setIsSignUp] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    reset,
   } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema.refine((data) => !isSignUp || data.password === data.confirmPassword, {
-      message: "As senhas não coincidem",
-      path: ["confirmPassword"]
-    })),
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
-      fullName: "",
-      confirmPassword: ""
     }
   });
 
   const onSubmit = async (data: LoginFormData) => {
-    if (isSignUp) {
-      const { error } = await signUp(data.email, data.password, data.fullName || "");
-      if (!error) {
-        showSuccess("Conta criada!", "Verifique seu e-mail para confirmar o cadastro.");
-        setIsSignUp(false);
-        reset();
-      }
-    } else {
-      const { error } = await signIn(data.email, data.password);
-      if (!error) {
-        navigate('/app');
-      }
+    const { error } = await signIn(data.email, data.password);
+    if (!error) {
+      navigate('/app');
     }
   };
 
@@ -105,10 +87,10 @@ const Login = () => {
   }
 
   const isParentLogin = type === 'parent';
-  const title = isParentLogin ? "Portal das Famílias" : (isSignUp ? 'Criar Conta Profissional' : 'Login Profissional');
+  const title = isParentLogin ? "Portal das Famílias" : 'Login Profissional';
   const description = isParentLogin 
     ? "Acesse com seu e-mail e senha para acompanhar o desenvolvimento."
-    : (isSignUp ? 'Crie sua conta para acessar o sistema' : 'Entre com suas credenciais para acessar o sistema');
+    : 'Entre com suas credenciais para acessar o sistema';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -132,13 +114,6 @@ const Login = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {isSignUp && !isParentLogin && (
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Nome Completo</Label>
-                  <Input id="fullName" type="text" placeholder="Seu nome completo" {...register("fullName")} />
-                  {errors.fullName && <span className="text-red-600 text-xs">{errors.fullName.message}</span>}
-                </div>
-              )}
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail</Label>
                 <Input id="email" type="email" placeholder="seu@email.com" {...register("email")} />
@@ -150,7 +125,7 @@ const Login = () => {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder={isSignUp ? "Mínimo 6 caracteres" : "Digite sua senha"}
+                    placeholder="Digite sua senha"
                     {...register("password")}
                   />
                   <Button
@@ -165,24 +140,10 @@ const Login = () => {
                 </div>
                 {errors.password && <span className="text-red-600 text-xs">{errors.password.message}</span>}
               </div>
-              {isSignUp && !isParentLogin && (
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                  <Input id="confirmPassword" type="password" {...register("confirmPassword")} />
-                  {errors.confirmPassword && <span className="text-red-600 text-xs">{errors.confirmPassword.message}</span>}
-                </div>
-              )}
               <Button type="submit" className="w-full" disabled={loading || isSubmitting}>
-                {loading || isSubmitting ? 'Carregando...' : (isSignUp ? 'Criar Conta' : 'Entrar')}
+                {loading || isSubmitting ? 'Carregando...' : 'Entrar'}
               </Button>
             </form>
-            {!isParentLogin && (
-              <div className="mt-4 text-center">
-                <Button variant="link" onClick={() => { setIsSignUp(!isSignUp); reset(); }} className="text-sm">
-                  {isSignUp ? 'Já tem uma conta? Faça login' : 'Não tem uma conta? Cadastre-se'}
-                </Button>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
