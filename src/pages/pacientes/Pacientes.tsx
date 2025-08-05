@@ -18,6 +18,7 @@ import { PatientStatsCards } from "@/components/patients/PatientStatsCards";
 import { PatientSearchAndFilter } from "@/components/patients/PatientSearchAndFilter";
 import { PatientListItem } from "@/components/patients/PatientListItem";
 import { NewPatientDialog } from "@/components/patients/NewPatientDialog";
+import { PatientListItemSkeleton } from "@/components/patients/PatientListItemSkeleton";
 
 type Patient = Tables<'patients'> & {
   guardians?: Pick<Tables<'guardians'>, 'full_name' | 'email' | 'phone'> | null;
@@ -158,14 +159,6 @@ const Pacientes = () => {
     navigate(`/app/pacientes/${patientId}`);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loading />
-      </div>
-    );
-  }
-
   if (!hasPermission('pacientes', 'view')) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -223,18 +216,21 @@ const Pacientes = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>Lista de Pacientes ({filteredPatients.length})</CardTitle>
+          <CardTitle>Lista de Pacientes ({loading ? '...' : filteredPatients.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Carregando pacientes...
+            <div className="space-y-4">
+              {[...Array(3)].map((_, i) => <PatientListItemSkeleton key={i} />)}
             </div>
           ) : filteredPatients.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              <p>Nenhum paciente encontrado</p>
-            </div>
+            <EmptyState
+              icon={Users}
+              title="Nenhum paciente encontrado"
+              description="Não há pacientes que correspondam aos filtros aplicados. Tente uma busca diferente ou adicione um novo paciente."
+              actionLabel={hasPermission('pacientes', 'create') ? "Adicionar Novo Paciente" : undefined}
+              onAction={hasPermission('pacientes', 'create') ? () => setIsNewPatientDialogOpen(true) : undefined}
+            />
           ) : (
             <div className="space-y-4">
               {filteredPatients.map((patient) => (
