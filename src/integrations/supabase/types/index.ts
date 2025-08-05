@@ -1,6 +1,6 @@
-import { Database as DB } from "./types/database"
-import { Tables as T, TablesInsert as TI, TablesUpdate as TU } from "./types/helpers"
-import { Enums as E } from "./types/enums"
+import { Database as DB } from "./database"
+import { Tables as T, TablesInsert as TI, TablesUpdate as TU } from "./helpers"
+import { Enums as E } from "./enums"
 
 export type Database = DB
 export type Tables<TableName extends keyof T> = T[TableName]
