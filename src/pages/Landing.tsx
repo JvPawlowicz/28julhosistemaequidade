@@ -15,7 +15,8 @@ import {
   CheckCircle,
   Users,
   Calendar,
-  Activity
+  Activity,
+  Power
 } from "lucide-react";
 
 const Landing = () => {
@@ -68,13 +69,13 @@ const Landing = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-light to-secondary-light">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
       <header className="container mx-auto px-4 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-primary rounded-xl">
-              <Stethoscope className="h-8 w-8 text-white" />
+              <Stethoscope className="h-8 w-8 text-primary-foreground" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-primary">Equidade+</h1>
@@ -82,16 +83,13 @@ const Landing = () => {
             </div>
           </div>
           
-          <div className="flex gap-3">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-success rounded-full animate-pulse" />
+              <span className="text-sm font-medium text-success">Sistema Operacional</span>
+            </div>
             <Button variant="outline" onClick={() => navigate("/login")}>
               Entrar
-            </Button>
-            <Button 
-              className="gap-2"
-              onClick={() => window.open("https://wa.me/5516996308848", "_blank")}
-            >
-              <MessageCircle className="h-4 w-4" />
-              Suporte
             </Button>
           </div>
         </div>
@@ -119,7 +117,7 @@ const Landing = () => {
               <Card className="border-2 border-primary/20 hover:border-primary/40 transition-colors cursor-pointer group">
                 <CardContent className="p-8 text-center">
                   <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                    <Shield className="h-8 w-8 text-white" />
+                    <Shield className="h-8 w-8 text-primary-foreground" />
                   </div>
                   <h3 className="text-xl font-bold text-primary mb-2">Acesso Profissionais</h3>
                   <p className="text-muted-foreground text-sm mb-4">
@@ -138,7 +136,7 @@ const Landing = () => {
               <Card className="border-2 border-secondary/20 hover:border-secondary/40 transition-colors cursor-pointer group">
                 <CardContent className="p-8 text-center">
                   <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                    <Heart className="h-8 w-8 text-white" />
+                    <Heart className="h-8 w-8 text-secondary-foreground" />
                   </div>
                   <h3 className="text-xl font-bold text-secondary mb-2">Portal das Famílias</h3>
                   <p className="text-muted-foreground text-sm mb-4">
@@ -173,22 +171,22 @@ const Landing = () => {
           </div>
 
           <div className="relative">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 transform rotate-3 hover:rotate-0 transition-transform duration-300">
-              <div className="bg-gradient-to-r from-primary to-secondary rounded-xl p-6 text-white mb-6">
+            <div className="bg-card border rounded-2xl shadow-2xl p-8 transform rotate-3 hover:rotate-0 transition-transform duration-300">
+              <div className="bg-gradient-to-r from-primary to-secondary rounded-xl p-6 text-primary-foreground mb-6">
                 <h3 className="text-2xl font-bold mb-2">Dashboard Inteligente</h3>
                 <p className="opacity-90">Visão completa da sua clínica em tempo real</p>
               </div>
               
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-medical-gray rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <span className="font-medium">Atendimentos Hoje</span>
                   <span className="text-2xl font-bold text-primary">24</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-medical-gray rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <span className="font-medium">Taxa de Presença</span>
                   <span className="text-2xl font-bold text-success">94%</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-medical-gray rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
                   <span className="font-medium">Pacientes Ativos</span>
                   <span className="text-2xl font-bold text-secondary">156</span>
                 </div>
@@ -199,7 +197,7 @@ const Landing = () => {
       </section>
 
       {/* Benefícios */}
-      <section className="bg-white py-20">
+      <section className="bg-muted py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-bold text-primary mb-4">
@@ -215,7 +213,7 @@ const Landing = () => {
               <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-shadow">
                 <CardContent className="p-8 text-center">
                   <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-6">
-                    <beneficio.icon className="h-8 w-8 text-white" />
+                    <beneficio.icon className="h-8 w-8 text-primary-foreground" />
                   </div>
                   <h4 className="text-xl font-bold text-primary mb-4">{beneficio.titulo}</h4>
                   <p className="text-muted-foreground">{beneficio.descricao}</p>
@@ -227,7 +225,7 @@ const Landing = () => {
       </section>
 
       {/* Funcionalidades */}
-      <section className="bg-medical-gray py-20">
+      <section className="bg-background py-20">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h3 className="text-4xl font-bold text-primary mb-4">
@@ -255,10 +253,10 @@ const Landing = () => {
       {/* CTA Section */}
       <section className="bg-gradient-to-r from-primary to-secondary py-20">
         <div className="container mx-auto px-4 text-center">
-          <h3 className="text-4xl font-bold text-white mb-6">
+          <h3 className="text-4xl font-bold text-primary-foreground mb-6">
             Pronto para revolucionar sua gestão clínica?
           </h3>
-          <p className="text-xl text-white/90 mb-8 max-w-2xl mx-auto">
+          <p className="text-xl text-primary-foreground/90 mb-8 max-w-2xl mx-auto">
             Junte-se a centenas de profissionais que já transformaram sua prática com o Equidade+
           </p>
           
@@ -277,7 +275,7 @@ const Landing = () => {
       </section>
 
       {/* Footer */}
-      <footer className="bg-primary text-white py-12">
+      <footer className="bg-primary text-primary-foreground py-12">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
@@ -285,11 +283,11 @@ const Landing = () => {
                 <Stethoscope className="h-8 w-8" />
                 <span className="text-2xl font-bold">Equidade+</span>
               </div>
-              <p className="text-white/80 mb-4">
+              <p className="text-primary-foreground/80 mb-4">
                 Sistema de gestão clínica mais completo do Brasil.
               </p>
-              <p className="text-sm text-white/60">
-                Desenvolvido por Humexa 2025 powered by Grupo Equidade
+              <p className="text-sm text-primary-foreground/60">
+                Desenvolvido por Humexa 2025
               </p>
             </div>
 
@@ -297,21 +295,21 @@ const Landing = () => {
               <h4 className="text-lg font-bold mb-4">Contato</h4>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
-                  <Mail className="h-5 w-5 text-white/80" />
+                  <Mail className="h-5 w-5 text-primary-foreground/80" />
                   <a 
                     href="mailto:joao.victor@equidadeplus.online"
-                    className="text-white/80 hover:text-white transition-colors"
+                    className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
                   >
                     joao.victor@equidadeplus.online
                   </a>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Phone className="h-5 w-5 text-white/80" />
+                  <Phone className="h-5 w-5 text-primary-foreground/80" />
                   <a 
                     href="tel:+5516996308848"
-                    className="text-white/80 hover:text-white transition-colors"
+                    className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
                   >
-                    (16) 99630-8848
+                    +55 (16) 99630-8848
                   </a>
                 </div>
               </div>
@@ -329,9 +327,9 @@ const Landing = () => {
             </div>
           </div>
           
-          <div className="border-t border-white/20 mt-8 pt-8 text-center">
-            <p className="text-white/60">
-              © 2025 Equidade+. Todos os direitos reservados.
+          <div className="border-t border-primary-foreground/20 mt-8 pt-8 text-center">
+            <p className="text-primary-foreground/60">
+              © 2025 Equidade+ by Humexa. Todos os direitos reservados.
             </p>
           </div>
         </div>

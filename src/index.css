@@ -2,114 +2,101 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* 
+  Grupo Equidade Design System - Implementação da Paleta de Cores
+  As cores foram convertidas para HSL para compatibilidade com ShadCN.
 */
 
 @layer base {
   :root {
-    /* Grupo Equidade Design System - Cores da Identidade Visual */
-    --background: 0 0% 98%;
-    --foreground: 213 18% 16%;
+    /* Cores para o MODO CLARO (Light Mode) */
+    --background: 0 0% 100%; /* Branco (#FFFFFF) */
+    --foreground: 0 0% 10%; /* Preto 85% (#1A1A1A) */
 
     --card: 0 0% 100%;
-    --card-foreground: 213 18% 16%;
+    --card-foreground: 0 0% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 213 18% 16%;
+    --popover-foreground: 0 0% 10%;
 
-    /* Primary: Azul Equidade #00539C - Cor principal da marca */
-    --primary: 212 100% 31%;
+    /* Primary: Azul Escuro (#003366) */
+    --primary: 210 100% 20%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 212 100% 25%;
-    --primary-light: 212 100% 95%;
+    --primary-hover: 210 100% 15%;
+    --primary-light: 210 100% 97%;
 
-    /* Secondary: Azul Turquesa #36A7D9 - Tom acolhedor e instrutivo */
-    --secondary: 198 67% 53%;
+    /* Secondary: Azul Claro (#0099CC) */
+    --secondary: 195 100% 40%;
     --secondary-foreground: 0 0% 100%;
-    --secondary-hover: 198 67% 45%;
-    --secondary-light: 198 67% 95%;
+    --secondary-hover: 195 100% 35%;
+    --secondary-light: 195 100% 97%;
 
-    /* Medical UI Colors - Tons neutros e acolhedores */
-    --medical-gray: 210 15% 96%;
-    --medical-gray-foreground: 213 18% 25%;
-    --medical-border: 210 15% 88%;
-    --medical-input: 210 15% 96%;
-
-    --muted: 210 15% 96%;
-    --muted-foreground: 213 15% 45%;
-
-    /* Accent: Derivado do azul turquesa para elementos secundários */
-    --accent: 198 67% 95%;
-    --accent-foreground: 198 67% 35%;
-
-    /* Status Colors - Cores do quebra-cabeça da marca */
-    --success: 120 100% 25%; /* Verde #008000 - Tom natural e positivo */
-    --success-foreground: 0 0% 100%;
-    --warning: 51 100% 50%; /* Amarelo dourado #FFD700 - Tom caloroso */
-    --warning-foreground: 213 18% 16%;
-    --destructive: 0 100% 41%; /* Vermelho #D00000 - Tom sério mas não agressivo */
+    /* Destructive: Vermelho (#D71920) */
+    --destructive: 358 79% 47%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 210 15% 88%;
-    --input: 210 15% 96%;
-    --ring: 212 100% 31%;
+    /* Success: Verde (#009640) */
+    --success: 145 100% 29%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning: Amarelo (#FFDE17) */
+    --warning: 52 100% 54%;
+    --warning-foreground: 0 0% 10%; /* Texto escuro para contraste */
+
+    /* Muted/Bordas: Cinza Claro (#D6D7D9) */
+    --muted: 220 5% 90%; /* Um pouco mais escuro para textos */
+    --muted-foreground: 0 0% 40%; /* Preto 60% (#666666) */
+    
+    --accent: 220 5% 95%;
+    --accent-foreground: 0 0% 10%;
+
+    --border: 220 5% 85%;
+    --input: 220 5% 95%;
+    --ring: 210 100% 20%; /* Azul Escuro */
 
     --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Cores para o MODO ESCURO (Dark Mode) */
+    --background: 0 0% 10%; /* Preto 85% (#1A1A1A) */
+    --foreground: 0 0% 98%; /* Branco */
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 240 4% 11%; /* Cinza Escuro (#2B2B2B) */
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 240 4% 11%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    /* Primary: Azul Claro (#0099CC) */
+    --primary: 195 100% 40%;
+    --primary-foreground: 0 0% 10%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    /* Secondary: Cinza Claro (#D6D7D9) */
+    --secondary: 220 5% 85%;
+    --secondary-foreground: 0 0% 10%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    /* Destructive: Vermelho (#D71920) */
+    --destructive: 358 79% 47%;
+    --destructive-foreground: 0 0% 100%;
 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    /* Success: Verde (#009640) */
+    --success: 145 100% 29%;
+    --success-foreground: 0 0% 100%;
 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    /* Warning: Amarelo (#FFDE17) */
+    --warning: 52 100% 54%;
+    --warning-foreground: 0 0% 10%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --muted: 240 4% 15%;
+    --muted-foreground: 0 0% 80%; /* Cinza Claro (#CCCCCC) */
+
+    --accent: 240 4% 15%;
+    --accent-foreground: 0 0% 98%;
+
+    --border: 240 4% 20%;
+    --input: 240 4% 15%;
+    --ring: 195 100% 40%; /* Azul Claro */
   }
 }
 
@@ -120,5 +107,6 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'PT Sans', sans-serif;
   }
 }
