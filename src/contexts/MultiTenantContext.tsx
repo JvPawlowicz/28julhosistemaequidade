@@ -4,14 +4,14 @@ import { useAuth } from "./useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables, Enums } from '@/integrations/supabase/types';
 
-export interface Unit extends Tables<'units'> {
+export type Unit = Tables<'units'> & {
   active: boolean;
   settings: {
     workingHours: { start: string; end: string };
     timezone: string;
     specialties: string[];
   };
-}
+};
 
 export interface Professional {
   id: string;
